@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FileShare System</title>
+<style>
+:root{--bg:#f3f2f1;--card:#fff;--side:#faf9f8;--ink:#201f1e;--mute:#605e5c;--line:#e1dfdd;--accent:#0f6cbd;--accentbg:#e5f1fb;--ok:#107c10;--bad:#c50f1f;--warn:#986f0b;--warnbg:#fff4ce;--hover:#f3f2f1;--code:#eef0f4}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1a19;--card:#252423;--side:#201f1e;--ink:#f3f2f1;--mute:#c8c6c4;--line:#3b3a39;--accent:#4fa0e8;--accentbg:#1d3550;--ok:#6bb700;--bad:#f1707b;--warn:#e0a84a;--warnbg:#3d3220;--hover:#323130;--code:#2d2c2b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:14px 16px 0}
+header h1{margin:0 0 2px;font-size:20px}
+header .sub{margin-bottom:10px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{border:0;border-bottom:3px solid transparent;background:none;color:var(--ink);padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button.on{border-bottom-color:var(--accent);color:var(--accent)}
+main{max-width:1180px;margin:0 auto;padding:16px}
+.tkframe{width:100%;height:calc(100vh - 150px);min-height:600px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.page{display:none}.page.on{display:block}
+.sub,.mute{color:var(--mute);font-size:13px}
+.subnav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.subnav button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 10px;border-radius:4px;cursor:pointer;font:inherit}
+.subnav button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.scr{display:none}.scr.on{display:block}
+.note{color:var(--mute);margin:0 0 10px}
+/* browser frame */
+.browser{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.addr{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--side);border-bottom:1px solid var(--line)}
+.addr .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.addr .url{margin-left:10px;flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:3px 12px;font-size:12px;color:var(--mute)}
+.appbar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--accent);color:#fff}
+.appbar .sbox{flex:1;max-width:460px;margin:0 auto;background:rgba(255,255,255,.2);border-radius:4px;padding:5px 12px}
+.appbar .who{font-size:12px;opacity:.9}
+.signin{max-width:380px;margin:0 auto 16px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;text-align:center}
+.signin .logo{font-size:20px;font-weight:700}
+pre{background:var(--code);border-radius:6px;padding:10px 12px;overflow-x:auto;font:12.5px/1.5 ui-monospace,Consolas,monospace;margin:8px 0 14px;white-space:pre}
+.fbody{display:grid;grid-template-columns:180px 1fr 250px;min-height:470px}
+.side{background:var(--side);border-right:1px solid var(--line);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.addnew{background:var(--accent);color:#fff;border-radius:4px;padding:8px 12px;margin:0 4px 10px;font-weight:600;text-align:center}
+.sitem{padding:8px 12px;border-radius:4px}
+.sitem.on{background:var(--accentbg);font-weight:600;border-left:3px solid var(--accent);padding-left:9px}
+.slabel{margin:12px 12px 2px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.sitem{cursor:pointer}
+.usage{margin-top:auto;padding:10px 12px;color:var(--mute);font-size:12px}
+.mainp{position:relative;min-width:0}
+.crumbs{padding:12px 16px 6px;font-size:18px;font-weight:600}
+.crumbs span{color:var(--mute);font-weight:400}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:600;font-size:12px;color:var(--mute);padding:8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.sel td{background:var(--accentbg)}
+.dots{font-weight:700;font-size:18px;color:var(--mute);padding:0 8px}
+.fi{display:inline-block;width:22px;height:26px;border-radius:3px;color:#fff;font-size:9px;font-weight:700;text-align:center;line-height:26px;margin-right:10px;vertical-align:middle}
+.pdf{background:#d13438}.doc{background:#185abd}.zip{background:#986f0b}.xls{background:#107c41}
+.fold{display:inline-block;width:24px;height:18px;background:#f0b429;border-radius:2px 4px 4px 4px;margin-right:10px;vertical-align:middle}
+.menu{position:absolute;right:20px;top:150px;background:var(--card);border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:4px;min-width:210px;z-index:2}
+.menu div{padding:7px 12px;border-radius:4px}.menu div:hover{background:var(--hover)}
+.menu .sep{height:1px;background:var(--line);padding:0;margin:4px 0}
+.menu .del{color:var(--bad)}
+.detail{border-left:1px solid var(--line);padding:14px}
+.detail h3{margin:6px 0 4px;font-size:15px}
+.prow{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:2px 0}
+.prow span:first-child{color:var(--mute)}
+/* dialogs */
+.dlgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.dlg{max-width:540px;width:100%;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.dlg h3{margin:0 0 14px;font-weight:600}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
+.box{border:1px solid var(--line);border-bottom:2px solid var(--accent);border-radius:4px;padding:8px 10px;min-height:36px;color:var(--mute)}
+.ink{color:var(--ink)}
+.fcard{display:flex;align-items:center;border:1px solid var(--line);border-radius:4px;padding:8px 10px;margin-bottom:6px}
+.opt{display:flex;gap:10px;border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px;cursor:pointer}
+.opt.on{border-color:var(--accent);background:var(--accentbg)}
+.opt .r{width:16px;height:16px;border-radius:50%;border:2px solid var(--mute);margin-top:2px;flex:none}
+.opt.on .r{border-color:var(--accent);box-shadow:inset 0 0 0 3px var(--card);background:var(--accent)}
+.warnbox{border-left:3px solid var(--warn);background:var(--warnbg);padding:8px 10px;border-radius:0 4px 4px 0;font-size:13px;margin:8px 0}
+.okbox{border-left:3px solid var(--ok);background:var(--hover);padding:8px 10px;border-radius:0 4px 4px 0;font-size:13px;margin:8px 0}
+.btn{display:inline-block;padding:6px 14px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink);white-space:nowrap;cursor:pointer}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.d{color:var(--bad);border-color:var(--bad)}
+.right{text-align:right}
+.mail{max-width:540px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
+.mail .hd{color:var(--mute);font-size:12px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:12px}
+.attach{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:4px;padding:6px 10px;margin-top:6px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.wt{max-width:420px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:24px;text-align:center}
+.otp{display:flex;gap:6px;margin:10px 0;justify-content:center}
+.otp i{width:34px;height:42px;border:1px solid var(--line);border-bottom:2px solid var(--accent);border-radius:4px}
+.tag{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.role{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:3px 8px;min-width:110px}
+.pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:12px;border:1px solid var(--line)}
+.pill.a{border-color:var(--bad);color:var(--bad)}.pill.p{border-color:var(--accent);color:var(--accent)}
+/* design */
+.doc{max-width:980px}
+.doc h2{font-size:19px;margin:28px 0 8px;padding-top:6px;border-top:2px solid var(--line)}
+.doc h2:first-child{border-top:0;margin-top:0}
+.doc h3{font-size:15px;margin:16px 0 6px}
+.doc p{margin:6px 0 10px}
+.doc ul,.doc ol{margin:6px 0 12px;padding-left:22px}
+.doc table{background:var(--card);margin:8px 0 14px;font-size:13.5px}
+.doc th,.doc td{border:1px solid var(--line);padding:6px 9px;vertical-align:top}
+.doc th{background:var(--code);color:var(--ink)}
+.tw{overflow-x:auto}
+code{background:var(--code);border-radius:4px;padding:1px 5px;font:12.5px ui-monospace,Consolas,monospace}
+.zones{display:grid;grid-template-columns:1fr 1.2fr 1.6fr;gap:10px;margin:10px 0}
+.zone{border:2px dashed var(--line);border-radius:10px;padding:10px;background:var(--card)}
+.zone h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.zb{border:1px solid var(--line);border-radius:6px;padding:7px 9px;margin:5px 0;background:var(--accentbg);font-size:13px}
+.zb small{display:block;color:var(--mute)}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;margin:4px 0;padding-left:30px;position:relative}
+.steps li:before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;text-align:center;line-height:20px}
+/* timeline */
+.tl td,.tl th{border:1px solid var(--line);padding:9px 12px}
+.tl{background:var(--card);max-width:900px}
+.tl th{background:var(--code)}
+.tl td.n{text-align:right;white-space:nowrap}
+.tl td.d{white-space:nowrap}
+.tl tr.tot td{font-weight:700;background:var(--code)}
+.gbar{height:12px;border-radius:3px;background:var(--accent)}
+@media (max-width:980px){.fbody{grid-template-columns:1fr}.side .addnew{align-self:flex-start}.slabel{width:100%;margin:4px 12px 0}.side{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line)}.usage{display:none}.detail{border-left:0;border-top:1px solid var(--line)}.pair{grid-template-columns:1fr}.zones{grid-template-columns:1fr}}
+@media (max-width:640px){.appbar .who{display:none}.hide-s{display:none}.menu{right:8px}}
+</style>
+</head>
+<body>
+<header>
+<h1>FileShare System</h1>
+<div class="sub">Separate web application at files.company.com · Microsoft sign-in (same accounts as Teams and Outlook) · Wireframe, design, technical details, task breakup and timeline</div>
+<div class="tabs" id="tabs">
+<button class="on" data-p="wf">Wireframe</button>
+<button data-p="ds">Design</button>
+<button data-p="tc">Technical</button>
+<button data-p="tk">Tasks</button>
+<button data-p="tl">Timeline</button>
+</div>
+</header>
+<main>
+
+<!-- ===================== WIREFRAME ===================== -->
+<section class="page on" id="wf">
+<div class="subnav" id="wfnav">
+<button class="on" data-s="w1">1. Sign in and My files</button>
+<button data-s="w2">2. Send to external person</button>
+<button data-s="w3">3. Approval</button>
+<button data-s="w4">4. Roles (admin)</button>
+<button data-s="w5">5. Outside person</button>
+<button data-s="w6">6. Other dialogs</button>
+</div>
+
+<div class="scr on" id="w1">
+<p class="note">FileShare is its own web application at <b>files.company.com</b>, opened in a normal browser on the company network. People sign in with their <b>Microsoft account</b> (the same company account they use for Teams and Outlook). Example below: the ⋮ menu is open on Projects.</p>
+<p class="sub" style="margin:0 0 6px"><b>After sign in</b> – My files (the main screen)</p>
+<div class="browser">
+<div class="addr"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">🔒 https://files.company.com</span></div>
+<div class="appbar"><b>FileShare</b><div class="sbox">Search files</div><span class="who">Satendra · signed in with Microsoft</span></div>
+<div class="fbody">
+<aside class="side">
+<div class="addnew">+ Add new</div>
+<div class="sitem on" data-v="my">My files</div>
+<div class="sitem" data-v="shared">Shared with me</div>
+<div class="sitem" data-v="perm">Permanent files 🔒</div>
+<div class="sitem" data-v="sent">Sent outside</div>
+<div class="slabel">For approvers</div>
+<div class="sitem" data-v="appr">Approvals <span class="pill a" style="margin-left:4px">2</span></div>
+<div class="slabel">Admin</div>
+<div class="sitem" data-v="roles">Roles <span class="pill a">Admin</span></div>
+<div class="usage">Files are deleted 7 days after upload unless saved permanently. 🔒 = permanent.</div>
+</aside>
+<div class="mainp" data-view="my">
+<div class="crumbs">My files</div>
+<table><thead><tr><th>Name</th><th class="hide-s">Modified</th><th class="hide-s">Size</th><th>Sharing</th><th></th></tr></thead><tbody>
+<tr class="sel"><td><span class="fold"></span><b>Projects</b></td><td class="hide-s">Today</td><td class="hide-s">4 items</td><td>Shared</td><td class="dots">⋮</td></tr>
+<tr><td><span class="fold"></span><b>Contracts</b></td><td class="hide-s">Yesterday</td><td class="hide-s">2 items</td><td class="mute">Private</td><td class="dots">⋮</td></tr>
+<tr><td><span class="fold"></span><b>Design team</b></td><td class="hide-s">Today</td><td class="hide-s">3 items</td><td class="mute">Shared by Rahul</td><td class="dots">⋮</td></tr>
+<tr><td><span class="fi pdf">PDF</span><b>contract.pdf</b> 🔒</td><td class="hide-s">Last month</td><td class="hide-s">2.4 MB</td><td class="mute">Private</td><td class="dots">⋮</td></tr>
+<tr><td><span class="fi xls">XLS</span><b>budget.xlsx</b></td><td class="hide-s">Today</td><td class="hide-s">48 KB</td><td>Shared</td><td class="dots">⋮</td></tr>
+</tbody></table>
+<div class="menu"><div>Share</div><div>Send to external person</div><div>Download</div><div>Save permanently</div><div class="sep"></div><div class="del">Delete</div></div>
+</div>
+<div class="mainp" data-view="shared" style="display:none"><div class="crumbs">Shared with me</div><table><thead><tr><th>Name</th><th>Modified</th><th>Size</th><th>Shared by</th></tr></thead><tbody><tr><td><span class="fold"></span><b>Design team</b></td><td>Today</td><td>3 items</td><td>Rahul</td></tr><tr><td><span class="fi pdf">PDF</span><b>brand-guide.pdf</b></td><td>Yesterday</td><td>1.1 MB</td><td>Anita</td></tr><tr><td><span class="fi xls">XLS</span><b>q3-plan.xlsx</b></td><td>Last week</td><td>96 KB</td><td>Meera</td></tr></tbody></table><p class="sub" style="padding:8px 12px">Items shared with you show only <b>Download</b> in the ⋮ menu.</p></div>
+<div class="mainp" data-view="perm" style="display:none"><div class="crumbs">Permanent files 🔒</div><table><thead><tr><th>Name</th><th>Approved</th><th>Size</th><th>Approved by</th></tr></thead><tbody><tr><td><span class="fi pdf">PDF</span><b>contract.pdf</b> 🔒</td><td>Last month</td><td>2.4 MB</td><td>Rahul</td></tr><tr><td><span class="fi pdf">PDF</span><b>agreement-2025.pdf</b> 🔒</td><td>3 months ago</td><td>860 KB</td><td>Meera</td></tr></tbody></table><p class="sub" style="padding:8px 12px">These files are never deleted. A file appears here only after an approver approves "Save permanently". They have no Delete.</p></div>
+<div class="mainp" data-view="sent" style="display:none"><div class="crumbs">Sent outside</div><table><thead><tr><th>Files</th><th>To</th><th>Sent as</th><th>Status</th></tr></thead><tbody><tr><td><span class="fold"></span><b>Projects.zip</b></td><td>vendor@acme.com</td><td>Link</td><td><span class="pill a">Waiting for approval</span></td></tr><tr><td><span class="fi pdf">PDF</span><b>offer-letter.pdf</b></td><td>name@partner.com</td><td>Attachment</td><td>Sent · 2 days ago</td></tr><tr><td><span class="fold"></span><b>Designs.zip</b></td><td>agency@studio.com</td><td>Link</td><td>Downloaded · link valid until 10 Nov</td></tr></tbody></table></div>
+<div class="mainp" data-view="appr" style="display:none"><div class="crumbs">Approvals</div><table><thead><tr><th>Request</th><th>From</th><th>Type</th><th></th></tr></thead><tbody><tr><td><b>Projects.zip</b> to vendor@acme.com<div class="sub">4 files · 9.6 MB</div></td><td>Satendra</td><td>Send outside</td><td><span class="btn p">Review</span></td></tr><tr><td><b>budget.xlsx</b><div class="sub">48 KB</div></td><td>Rahul</td><td>Save permanently</td><td><span class="btn p">Review</span></td></tr></tbody></table><p class="sub" style="padding:8px 12px">Only Approvers and Admins see this page. The Review button opens the approval screen (screen 3).</p></div>
+<aside class="detail"><span class="fold" style="transform:scale(2);margin:10px 0 14px 8px"></span><h3>Projects</h3>
+<div class="prow"><span>Has access</span><span>Anita</span></div><div class="prow"><span>Modified</span><span>Today</span></div><div class="prow"><span>Items</span><span>4</span></div>
+<p class="sub" style="margin-top:12px">Items shared with you show only <b>Download</b> in the ⋮ menu. Permanent files have no Delete.</p></aside>
+</div>
+</div>
+<div style="height:18px"></div>
+<p class="sub" style="margin:0 0 6px"><b>Before sign in</b> – the first page people see</p>
+<div class="browser" style="margin-top:6px">
+<div class="addr"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">🔒 https://files.company.com</span></div>
+<div class="appbar"><b style="font-size:16px">FileShare</b></div>
+<div style="padding:28px 16px;background:var(--side)"><div class="signin" style="margin-bottom:0"><div class="logo">FileShare</div><p class="sub">Store, share and send files securely</p><span class="btn p">Sign in with Microsoft</span><p class="sub" style="margin-top:10px">Uses your company Microsoft account. No separate password.</p></div></div>
+</div>
+</div>
+
+<div class="scr" id="w2">
+<p class="note">⋮ → Send to external person. The sender chooses <b>how</b> the person receives the files. <b>Nothing is sent until an approver approves.</b> Click the options.</p>
+<div class="dlg">
+<h3>Send to external person</h3>
+<div class="field"><label>Person's email</label><div class="box">name@partner.com</div></div>
+<div class="fcard"><span class="fold"></span><div><b>Projects</b><div class="sub">4 files, 9.6 MB · sent as Projects.zip</div></div></div>
+<div class="field"><label>Send as</label>
+<div class="opt on" data-o="link"><span class="r"></span><div><b>Link</b> (recommended)<div class="sub">The person gets a link, then a code at the same email to download. Works up to 100 MB. The link stops working after the time the approver chooses.</div></div></div>
+<div class="opt" data-o="att"><span class="r"></span><div><b>Email attachment</b><div class="sub">The files are attached to the email. Up to 20 MB. Once sent, it cannot be taken back or expired.</div></div></div>
+</div>
+<div id="sendinfo" class="okbox">9.6 MB · fits both options.</div>
+<div class="field"><label>Reason</label><div class="box">Why are you sending this?</div></div>
+<div class="right"><span class="btn">Cancel</span> <span class="btn p">Send for approval</span></div>
+<p class="sub">After this: "Sent for approval. The email to name@partner.com goes out only after an approver approves."</p>
+</div>
+</div>
+
+<div class="scr" id="w3">
+<p class="note">Every approver (except the sender) gets this email. The button opens the approval page in FileShare (signed in with Microsoft). Opening the email or the page never approves.</p>
+<div class="pair">
+<div class="mail"><div class="hd">To: approvers · Subject: Approval needed: send files outside</div>
+<p><b>Satendra</b> wants to send <b>Projects.zip</b> (4 files, 9.6 MB) to <b>vendor@acme.com</b> as an <b>email attachment</b>.</p>
+<p class="sub">Reason: Integration testing.</p><span class="btn p">Review</span></div>
+<div class="dlg"><h3>Approve sending outside?</h3>
+<div class="prow"><span>From</span><span>Satendra</span></div>
+<div class="prow"><span>To</span><span>vendor@acme.com</span></div>
+<div class="prow"><span>Send as</span><span><b>Email attachment</b></span></div>
+<div class="prow"><span>Files</span><span>4 files · 9.6 MB · <u>Download to check</u></span></div>
+<div class="prow"><span>Reason</span><span>Integration testing</span></div>
+<div class="warnbox">An attachment cannot be taken back after it is sent.</div>
+<p class="sub">For <b>Link</b> requests the page also asks: "How long can this person download it?" 1 day · 2 days · 7 days.</p>
+<div class="right"><span class="btn d">Reject…</span> <span class="btn p">Approve</span></div>
+<p class="sub">Permanent-save requests use the same page: "Once approved the file is never deleted."</p></div>
+</div>
+</div>
+
+<div class="scr" id="w4">
+<p class="note">Roles page, visible only to admins. Admins decide who is an Admin, an Approver or a normal User. People come from Microsoft 365 automatically (synced); admins only choose their role.</p>
+<div class="browser">
+<div class="addr"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">🔒 https://files.company.com/roles</span></div>
+<div class="appbar"><b>FileShare</b><div class="sbox">Search files</div><span class="who">Satendra · signed in with Microsoft</span></div>
+<div class="fbody" style="grid-template-columns:180px 1fr">
+<aside class="side">
+<div class="addnew">+ Add new</div>
+<div class="sitem" data-v="my">My files</div>
+<div class="sitem" data-v="shared">Shared with me</div>
+<div class="sitem" data-v="perm">Permanent files 🔒</div>
+<div class="sitem" data-v="sent">Sent outside</div>
+<div class="slabel">For approvers</div>
+<div class="sitem" data-v="appr">Approvals <span class="pill a" style="margin-left:4px">2</span></div>
+<div class="slabel">Admin</div>
+<div class="sitem on" data-v="roles">Roles <span class="pill a">Admin</span></div>
+<div class="usage">Files are deleted 7 days after upload unless saved permanently. 🔒 = permanent.</div>
+</aside>
+<div class="mainp" style="padding:12px">
+<h3>Roles</h3>
+<div class="field" style="max-width:460px"><label>Find person (search synced company users)</label><div class="box">Type a name or email…</div></div>
+<div class="tw"><table><thead><tr><th>Person</th><th>Role</th><th class="hide-s">Changed</th><th></th></tr></thead><tbody>
+<tr><td>Satendra Raghav<div class="sub">satendra@company.com</div></td><td><span class="role">Admin ▾</span></td><td class="hide-s">Setup</td><td></td></tr>
+<tr><td>Rahul<div class="sub">rahul@company.com</div></td><td><span class="role">Approver ▾</span></td><td class="hide-s">Yesterday by Satendra</td><td><u>Remove role</u></td></tr>
+<tr><td>Meera<div class="sub">meera@company.com</div></td><td><span class="role">Approver ▾</span></td><td class="hide-s">Yesterday by Satendra</td><td><u>Remove role</u></td></tr>
+<tr><td>Anita<div class="sub">anita@company.com</div></td><td><span class="role">User ▾</span></td><td class="hide-s">—</td><td></td></tr>
+</tbody></table></div>
+<table style="margin-top:10px"><thead><tr><th>Role</th><th>Can do</th></tr></thead><tbody>
+<tr><td><span class="pill">User</span></td><td>Use My files, share, send outside and request permanent save. Everyone who signs in is a User.</td></tr>
+<tr><td><span class="pill p">Approver</span></td><td>Everything a User can, plus approve or reject sending outside and permanent saves.</td></tr>
+<tr><td><span class="pill a">Admin</span></td><td>Everything a User can, plus this Roles page. Gets approval emails only when no other Approver can decide.</td></tr>
+</tbody></table>
+<div class="warnbox">Keep at least 2 Approvers so one absence does not block requests. The last Admin cannot be removed.</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="scr" id="w5">
+<p class="note">What the outside person receives, only after approval.</p>
+<div class="pair">
+<div>
+<p><b>A. Sent as Link</b></p>
+<div class="mail"><div class="hd">From: files@company.com · To: vendor@acme.com</div><p>Satendra from Company sent you files. Open the secure link to download them. A code will be sent to this email.</p><span class="btn p">Open secure link</span><p class="sub">Available until 10 Nov 2026.</p></div><br>
+<div class="wt"><div class="tag">Company Secure Share · share.company.com</div><h3>Satendra sent you files</h3><div class="box" style="text-align:center">v•••@acme.com</div><br><span class="btn p">Send code</span><div class="otp"><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="btn">Verify</span> <span class="btn p">Download</span><p class="sub">Any problem shows only "This link is not available".</p></div>
+</div>
+<div>
+<p><b>B. Sent as Email attachment</b></p>
+<div class="mail"><div class="hd">From: files@company.com · To: vendor@acme.com</div><p>Satendra from Company sent you the attached files.</p><div class="attach"><span class="fi zip">ZIP</span>Projects.zip · 9.6 MB</div><p class="sub" style="margin-top:12px">No link and no code. The person simply opens the attachment.</p></div>
+</div>
+</div>
+</div>
+
+<div class="scr" id="w6">
+<p class="note">Dialogs opened from Add new and the ⋮ menu.</p>
+<div class="dlgs">
+<div class="dlg"><h3>New folder</h3><div class="field"><div class="box ink">Q4 planning</div></div><div class="right"><span class="btn">Cancel</span> <span class="btn p">Create</span></div></div>
+<div class="dlg"><h3>Share "Projects"</h3><div class="field"><label>To (colleague, from company users)</label><div class="box">Type a name…</div></div><p class="sub">They can download only, including files added later. No approval needed.</p><div class="right"><span class="btn">Cancel</span> <span class="btn p">Share</span></div></div>
+<div class="dlg"><h3>Save permanently?</h3><div class="fcard"><span class="fi doc">DOC</span><div><b>nda.docx</b><div class="sub">700 KB</div></div></div><p>Permanent files are never deleted. An approver will be asked by email.</p><div class="field"><label>Reason</label><div class="box">Why must this be kept?</div></div><div class="right"><span class="btn">Cancel</span> <span class="btn p">Send for approval</span></div></div>
+<div class="dlg"><h3>Delete "Projects"?</h3><p><b>This cannot be undone.</b> The folder and everything inside are deleted.</p><div class="right"><span class="btn">Cancel</span> <span class="btn p">Delete</span></div></div>
+</div>
+</div>
+</section>
+
+<!-- ===================== DESIGN ===================== -->
+<section class="page" id="ds"><div class="doc">
+
+<h2>1. What it is</h2>
+<p>FileShare is a <b>separate web application</b> at <code>files.company.com</code>. It is not part of HyperAI or Teams. Employees sign in with their <b>Microsoft account</b> (single sign-on), the same company account they use for Teams and Outlook. They keep files and folders, share them with colleagues, save important files permanently after approval, and send files to outside people as a <b>link</b> or an <b>email attachment</b> after approval. HyperAI is not changed.</p>
+
+<h2>2. Features</h2>
+<div class="tw"><table>
+<tr><th>Feature</th><th>Rule</th></tr>
+<tr><td>Users and sign-in</td><td>Users are synced from Microsoft 365 (Entra ID). "Sign in with Microsoft" in the browser (single sign-on, no separate password).</td></tr>
+<tr><td>My files</td><td>OneDrive-style list with folders (up to 5 levels), breadcrumb, details pane. Actions in the ⋮ menu.</td></tr>
+<tr><td>Upload</td><td>Files or whole folders, drag and drop. Max 100 MB per file, 10 GB per person. Same name becomes "name (1)".</td></tr>
+<tr><td>Temporary files</td><td>Every upload is deleted 7 days after upload, unless saved permanently.</td></tr>
+<tr><td>Save permanently</td><td>Needs one approval. Then never deleted and nobody can delete it (🔒).</td></tr>
+<tr><td>Download</td><td>Files download; folders download as zip. Nothing is opened in the browser.</td></tr>
+<tr><td>Search</td><td>Finds files and folders by name in My files and in items shared with you. Shows only what you can open.</td></tr>
+<tr><td>Share with colleague</td><td>No approval. Download only. A shared folder includes files added later.</td></tr>
+<tr><td>Send to external person</td><td>As <b>Link</b> (up to 100 MB, code to the same email, time-limited) or <b>Email attachment</b> (up to 20 MB). Needs one approval. No email goes out before approval.</td></tr>
+<tr><td>Delete</td><td>Owner only, final ("cannot be undone"). Permanent files cannot be deleted.</td></tr>
+<tr><td>Roles</td><td>User, Approver, Admin. Set by admins on the Roles page.</td></tr>
+</table></div>
+
+<h3>⋮ menu</h3>
+<div class="tw"><table>
+<tr><th>Item</th><th>My items</th><th>Shared with me</th></tr>
+<tr><td>Share · Send to external person · Save permanently</td><td>Yes</td><td>No</td></tr>
+<tr><td>Download</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Delete</td><td>Yes (not permanent files or folders containing them)</td><td>No</td></tr>
+</table></div>
+
+<h2>3. Users and sign-in</h2>
+<ul>
+<li>FileShare is a separate web application at <code>files.company.com</code>, reachable from the company network or VPN.</li>
+<li><b>Users come from Microsoft 365</b> (Microsoft Entra ID), the same company accounts used for Teams and Outlook. A background job syncs them every 30 minutes, so nobody creates users by hand.</li>
+<li><b>Single sign-on:</b> "Sign in with Microsoft" (OpenID Connect). No separate password. MFA and company sign-in rules are applied by Microsoft.</li>
+<li>Only employee accounts of the company's Microsoft tenant can use FileShare. Guest accounts are refused, even if they try to sign in. People disabled or removed in Microsoft lose access at the next sync.</li>
+<li>New users get the role <b>User</b>. Colleagues for sharing and for the Roles page are picked from the synced user list.</li>
+<li>Setup needed: one Entra ID app registration (sign-in, plus permission to read users, approved once by the Microsoft 365 admin).</li>
+<li>How sync and sign-in work step by step: <b>Technical</b> tab, sections 2 and 3.</li>
+</ul>
+
+<h2>4. Roles</h2>
+<div class="tw"><table>
+<tr><th>Role</th><th>Can do</th></tr>
+<tr><td>User</td><td>All file features. Default for everyone.</td></tr>
+<tr><td>Approver</td><td>User + approve or reject send-outside and permanent-save requests.</td></tr>
+<tr><td>Admin</td><td>Everything a User can + the Roles page. Gets approval emails only when no other Approver can decide.</td></tr>
+</table></div>
+<ul>
+<li>The first Admin is set in configuration (by their Microsoft id). After that, admins manage roles on the Roles page.</li>
+<li>The activity log is kept in the database for audits; IT reads it when needed (no page in version 1).</li>
+<li>The last Admin cannot be removed. The page warns when there are fewer than 2 Approvers.</li>
+<li>Every role change is logged with who changed it and when.</li>
+</ul>
+
+<h2>5. Approval</h2>
+<ol class="steps">
+<li>The employee sends a request (send outside or save permanently) with a reason.</li>
+<li>Every Approver gets an email, <b>except the sender</b>. If no other Approver exists, Admins get it (again never the sender). The server always refuses a decision by the request's sender. If nobody else can approve, the request times out after 3 days.</li>
+<li>The email button opens the approval page in FileShare (signed in with Microsoft).</li>
+<li>Opening the email or page never approves. The approver checks the files (download), then clicks Approve or Reject (with reason).</li>
+<li><b>One approval is enough.</b> The first decision wins; other approvers see "Already decided".</li>
+<li>No decision in 3 days: the request ends and the sender is told.</li>
+</ol>
+<p>The page works only for the person it was sent to, only once, and only while that person still has the Approver or Admin role.</p>
+
+<h2>6. Send to external person</h2>
+<div class="tw"><table>
+<tr><th></th><th>Link</th><th>Email attachment</th></tr>
+<tr><td>Size limit</td><td>100 MB</td><td>20 MB (the email is about 27 MB after encoding; some outside mail servers may still refuse it)</td></tr>
+<tr><td>What the person gets</td><td>Email with a link to share.company.com, then a 6-digit code to the same email, then download</td><td>Email with the file or zip attached</td></tr>
+<tr><td>How long</td><td>Approver chooses 1, 2 or 7 days, counted from approval (the person gets an approved frozen copy, so the file's own 7-day delete does not shorten it)</td><td>Forever (it is in their mailbox)</td></tr>
+<tr><td>Can it be stopped later</td><td>Yes: if the owner deletes the file or folder, the link stops at once. Permanent files cannot be deleted, and a file already removed by the 7-day clean-up can no longer be deleted, so in those cases the link runs for the chosen time.</td><td>No</td></tr>
+<tr><td>When the email is sent</td><td colspan="2"><b>Only after approval</b>, from files@company.com</td></tr>
+</table></div>
+<ul>
+<li>The files are frozen when the employee clicks Send. Files added later are not included. Folders and several files are sent as one zip.</li>
+<li>The approval page shows the chosen method. For attachments it warns that the email cannot be taken back.</li>
+<li>The reason is seen only by approvers, never by the outside person.</li>
+<li>If the package is over 20 MB, only Link can be chosen.</li>
+<li>The sender gets an email when the request is approved or rejected, and on the first download (link).</li>
+</ul>
+
+<h2>7. Outside portal (Link only)</h2>
+<ul>
+<li>Separate small website <code>share.company.com</code> in the DMZ.</li>
+<li>The page shows the masked email and a <b>Send code</b> button. The code is sent only when pressed.</li>
+<li>Code: 6 digits, 5 minutes, one use, max 3 per hour. 5 wrong codes lock for 15 minutes; 10 disable the link and alert the sender.</li>
+<li>Any problem shows only "This link is not available".</li>
+</ul>
+
+<h2>8. Permanent save</h2>
+<ul>
+<li>⋮ → Save permanently (file or folder, with reason). A folder includes the files inside it now.</li>
+<li>While waiting, the files are not deleted. After approval they move to locked storage (never deleted, 🔒).</li>
+<li>If rejected or timed out, they become temporary again; if their 7 days have passed, the owner is emailed and they are deleted 24 hours later. Such a file cannot be sent for permanent save again.</li>
+</ul>
+
+<h2>9. Architecture</h2>
+<div class="zones">
+<div class="zone"><h4>Internet</h4><div class="zb">Outside person<small>link email or attachment</small></div><div class="zb"><b>Microsoft cloud</b><small>Entra ID (sign-in) · Microsoft Graph (user sync)</small></div></div>
+<div class="zone"><h4>DMZ</h4><div class="zb">Reverse proxy + WAF</div><div class="zb"><b>Portal</b><small>share.company.com · code and download</small></div></div>
+<div class="zone"><h4>Company network</h4>
+<div class="zb"><b>Employees' browsers</b> → <b>FileShare app</b><small>files.company.com · page + API + background jobs</small></div>
+<div class="zb">PostgreSQL <small>database "fileshare"</small></div>
+<div class="zb">MinIO storage <small>temp-files · permanent-files · outbound</small></div>
+<div class="zb">Email server (SMTP relay)</div>
+</div></div>
+<ul>
+<li>The firewall lets the <b>portal</b> reach only PostgreSQL (with its limited login), MinIO (with its read-only key for the <code>outbound</code> bucket) and the email server. It cannot reach the FileShare app, employees' files or anything else on the internal network.</li>
+<li>The FileShare app server needs outbound HTTPS to Microsoft (login.microsoftonline.com, graph.microsoft.com) for sign-in and user sync.</li>
+<li>Attachments are sent by the FileShare app directly through the email server; the portal is not involved.</li>
+</ul>
+
+<h2>10. Storage</h2>
+<div class="tw"><table>
+<tr><th>Bucket</th><th>Holds</th><th>Deleted</th><th>Protection</th></tr>
+<tr><td><code>temp-files</code></td><td>Every upload</td><td>7 days after upload (not while a permanent save is waiting)</td><td>Normal</td></tr>
+<tr><td><code>permanent-files</code></td><td>Approved permanent files</td><td>Never</td><td>Object Lock + second copy on another server</td></tr>
+<tr><td><code>outbound</code></td><td>Approved link packages (copied there at approval)</td><td>When the link time ends</td><td>Only bucket the portal can read</td></tr>
+</table></div>
+
+<h2>11. Data</h2>
+<p><code>users</code> (email, name, role) · <code>items</code> (file/folder, owner, parent, name, size, storage key, temp/hold/permanent, delete time) · <code>shares</code> (item, colleague) · <code>requests</code> (type, sender, recipient, send as link/attachment, reason, state, access until) · <code>request_files</code> · <code>approval_tokens</code> · <code>links</code> · <code>codes</code> · <code>activity_log</code> (append only).</p>
+
+<h2>12. Security</h2>
+<ul>
+<li>Microsoft sign-in only; tokens checked against Entra ID; sessions in secure cookies.</li>
+<li>Every check is done on the server for every request: owner, shared with, or approver of that request.</li>
+<li>All files are sent as downloads (never shown in the browser).</li>
+<li>Approval: page opening (GET) never decides; decision is a POST by the signed-in approver.</li>
+<li>Link tokens are long random values stored only as hashes. 6-digit codes are stored with a server secret (HMAC), valid 5 minutes, with rate limits and lock-out.</li>
+<li>Portal isolated in the DMZ with read-only access to the outbound bucket.</li>
+<li>Activity log of uploads, shares, deletes, requests, decisions, role changes, codes and downloads.</li>
+<li>Accepted risks: link and code use the same mailbox; attachments cannot be recalled; no malware scan in version 1.</li>
+</ul>
+
+<h2>13. Technology and deployment</h2>
+<div class="tw"><table>
+<tr><th>Part</th><th>Technology</th></tr>
+<tr><td>Page</td><td>React + TypeScript + Fluent UI (Microsoft look)</td></tr>
+<tr><td>API and jobs</td><td>Node.js (TypeScript, Fastify), pg-boss jobs</td></tr>
+<tr><td>Portal</td><td>Node.js (TypeScript, Fastify), separate container in the DMZ</td></tr>
+<tr><td>Database / storage</td><td>PostgreSQL / MinIO AIStor (S3)</td></tr>
+<tr><td>Microsoft</td><td>Entra ID app registration (sign-in), Microsoft Graph (user sync)</td></tr>
+<tr><td>Email</td><td>Company SMTP from files@company.com (SPF, DKIM, DMARC)</td></tr>
+<tr><td>Deploy</td><td>Docker: app + database + storage on an internal server; portal on a DMZ server</td></tr>
+<tr><td>Details</td><td>See the <b>Technical</b> tab</td></tr>
+</table></div>
+
+<h2>14. Limits</h2>
+<p>Temp files 7 days · 100 MB per file · 10 GB per person · Link package 100 MB · Attachment 20 MB · Link time 1, 2 or 7 days · Approval timeout 3 days · Code 5 minutes.</p>
+
+<h2>15. Not in version 1</h2>
+<p>Rename, move, copy, sort, Recycle bin, viewing in the browser, edit permissions, malware scan, approval rules per department, notifications in Teams.</p>
+
+<h2>16. Needed from others</h2>
+<p>Entra ID app registration with permission to read users (Microsoft 365 admin) · outbound HTTPS from the app server to login.microsoftonline.com and graph.microsoft.com · first Admin and at least 2 Approvers · internal and DMZ servers · files.company.com and share.company.com with certificates · email sender with SPF/DKIM/DMARC and an SMTP relay that accepts messages of at least 30 MB · MinIO AIStor edition and a second server for the copy of permanent files.</p>
+</div></section>
+
+<!-- ===================== TECHNICAL ===================== -->
+<section class="page" id="tc"><div class="doc">
+
+<p class="mute">How FileShare is built, written so any technical person (Java, JavaScript, .NET, DevOps) can follow it.</p>
+
+<h2>1. The parts and why we chose them</h2>
+<div class="tw"><table>
+<tr><th>Part</th><th>Tool</th><th>Why</th></tr>
+<tr><td>Web page</td><td>React + TypeScript, built with Vite, Fluent UI components</td><td>React is the most widely used UI library. TypeScript catches mistakes before the code runs and shares types with the server. Vite gives a fast dev server and build. Fluent UI is Microsoft's own component library, so the page looks like OneDrive and Microsoft 365.</td></tr>
+<tr><td>API server</td><td>Node.js 22 LTS + TypeScript + Fastify</td><td>Same language as the page, so one person works across both. Fastify is fast and handles file streams (uploads, downloads, zips) well.</td></tr>
+<tr><td>Outside portal</td><td>Node.js + Fastify, plain HTML pages</td><td>Very small, separate program in the DMZ. Less code means less to attack.</td></tr>
+<tr><td>Database</td><td>PostgreSQL 16</td><td>Free, reliable, supports safe transactions and the features we need (section 4).</td></tr>
+<tr><td>Database code</td><td>Drizzle ORM + drizzle-kit</td><td>Tables are written in TypeScript; changes become versioned SQL migration files.</td></tr>
+<tr><td>File storage</td><td>MinIO AIStor (S3-compatible blob storage)</td><td>Stores the file bytes on our own server, with locking and auto-delete features (section 5).</td></tr>
+<tr><td>Background jobs</td><td>pg-boss</td><td>Runs scheduled and retryable jobs (user sync, clean-up, emails) and stores them in PostgreSQL, so no extra server such as Redis is needed.</td></tr>
+<tr><td>Sign-in</td><td>Microsoft Entra ID + <code>openid-client</code></td><td>Company single sign-on with the same accounts as Teams and Outlook.</td></tr>
+<tr><td>User sync</td><td>Microsoft Graph API</td><td>Reads the company user list from Microsoft (section 2).</td></tr>
+<tr><td>Email</td><td>Company SMTP relay + <code>nodemailer</code></td><td>Sends approval, link, code and attachment emails.</td></tr>
+<tr><td>Zip files</td><td><code>archiver</code></td><td>Builds zips while streaming, without loading whole files into memory.</td></tr>
+<tr><td>Input checks, logs, security</td><td><code>zod</code>, <code>pino</code>, <code>@fastify/helmet</code>, <code>@fastify/rate-limit</code>, <code>@fastify/csrf-protection</code></td><td>Validate every request, structured logs, security headers, limits on repeated attempts, protection of forms.</td></tr>
+<tr><td>Tests</td><td>Vitest (unit and API), Playwright (browser flows)</td><td>Fast tests in the same language; Playwright clicks through the real page.</td></tr>
+<tr><td>Running it</td><td>Docker, docker compose, Nginx reverse proxy (+ WAF in the DMZ)</td><td>Same setup on a laptop, staging and production. Nginx handles HTTPS.</td></tr>
+<tr><td>Local email testing</td><td>Mailpit</td><td>A fake inbox for development, so test emails never reach real people.</td></tr>
+</table></div>
+
+<h2>2. Users: where they come from and how we sync them</h2>
+<p>Nobody is created in FileShare by hand. Users come from <b>Microsoft Entra ID</b>, the company directory behind Microsoft 365, Teams and Outlook. Every company employee account can use FileShare. Guest accounts cannot.</p>
+<h3>One-time setup in Entra ID (done by the Microsoft 365 admin)</h3>
+<ol>
+<li>Register an app called "FileShare" with supported account types <b>"Accounts in this organizational directory only (single tenant)"</b>. This gives a <b>Tenant ID</b>, a <b>Client ID</b> and a <b>client secret</b> (or certificate). Secrets expire (at most 2 years); put the renewal date in the IT calendar, otherwise sign-in and sync stop.</li>
+<li>Under Authentication, add platform <b>"Web"</b> (not "Single-page application") with redirect address <code>https://files.company.com/auth/callback</code>. It must be "Web" because our server, not the browser, exchanges the sign-in code using the secret.</li>
+<li>Permissions: <code>openid</code>, <code>profile</code>, <code>email</code>, <code>User.Read</code> (delegated, for sign-in) and <code>User.Read.All</code> (application, for the sync job and the sign-in check). The admin approves them once ("admin consent").</li>
+<li>Leave <b>"Assignment required"</b> off: every company account can use FileShare, and the sync lists every company user, so all of them must be able to sign in.</li>
+<li>The app server needs outbound HTTPS to <code>login.microsoftonline.com</code> and <code>graph.microsoft.com</code> (through the company proxy if one is used).</li>
+</ol>
+<h3>How the sync works (background job every 30 minutes)</h3>
+<ol class="steps">
+<li>The job gets an app token from Microsoft (client credentials, scope <code>https://graph.microsoft.com/.default</code>, which means "the app permissions the admin approved", here <code>User.Read.All</code>) and calls Microsoft Graph:<br><code>GET https://graph.microsoft.com/v1.0/users/delta?$select=id,displayName,mail,userPrincipalName,accountEnabled,userType,department</code></li>
+<li>The first run returns every user, page by page, and at the end a <b>deltaLink</b>. We save the deltaLink in the <code>sync_state</code> table.</li>
+<li>Every next run calls the saved deltaLink. Microsoft returns only people who were added, changed or removed since the last run, plus a new deltaLink.</li>
+<li>Each person is inserted or updated in <code>users</code>, matched by the Microsoft id (<code>entra_id</code>): name, email (<code>mail</code>, or <code>userPrincipalName</code> if mail is empty), department, <code>active = accountEnabled</code>, and <code>last_seen_at</code> = start time of this run.</li>
+<li>People removed or disabled in Microsoft are set to <b>inactive</b>: they cannot sign in, their sessions are deleted, and they disappear from the share picker and from approver lists. Their files follow the normal rules (temporary files still expire; permanent files stay and are never deleted).</li>
+<li>Guest accounts (<code>userType = Guest</code>) are never added. If an existing user is changed to Guest, they are set to inactive.</li>
+<li>A saved deltaLink works for up to 7 days. If it has expired (Microsoft answers with an error such as <code>syncStateNotFound</code>) or Microsoft answers <code>410 Gone</code>, the job throws the deltaLink away and runs a <b>full sync</b>. A full sync lists only people who exist now, so people deleted in the meantime are not reported as removed. Therefore, after a full sync, every active user whose <code>last_seen_at</code> is older than this run is set to inactive and their sessions are deleted. The new deltaLink is saved only after this clean-up, so if the job fails half-way the next run repeats the full sync.</li>
+</ol>
+<pre>// simplified sync job
+const runStart = new Date();
+let full = !syncState.deltaLink;
+let url = syncState.deltaLink ?? FIRST_DELTA_URL;
+let newDeltaLink;
+while (url) {
+  let page;
+  try {
+    page = await graph.get(url);                    // app token, retries on 429/5xx
+  } catch (e) {
+    if (e.status === 410 || e.code === 'syncStateNotFound') {
+      await syncState.clear(); full = true; url = FIRST_DELTA_URL; continue;
+    }
+    throw e;
+  }
+  for (const u of page.value) {
+    if (u['@removed'])          { await users.deactivate(u.id); continue; }
+    if (u.userType === 'Guest') { await users.deactivate(u.id); continue; }
+    await users.upsert({ entraId: u.id, name: u.displayName,
+      email: (u.mail ?? u.userPrincipalName).toLowerCase(),
+      department: u.department, active: u.accountEnabled !== false,
+      lastSeenAt: runStart });
+  }
+  url = page['@odata.nextLink'];
+  if (page['@odata.deltaLink']) newDeltaLink = page['@odata.deltaLink'];
+}
+if (full) await users.deactivateNotSeenSince(runStart);   // people deleted while we were not syncing
+await syncState.save(newDeltaLink);                        // saved last: if anything failed, the next run repeats the full sync</pre>
+<p><b>Why sync, if people sign in with Microsoft anyway?</b> The share picker and the Roles page must list colleagues who have never opened FileShare, and someone who leaves the company must lose access within 30 minutes, even with an open session.</p>
+<p><b>Safety net:</b> if a person signs in before the sync has picked them up, the server looks them up once in Microsoft Graph by their Microsoft id (<code>GET https://graph.microsoft.com/v1.0/users/{oid}?$select=id,displayName,mail,userPrincipalName,accountEnabled,userType,department</code>, same app permission as the sync). They are added only if <code>userType</code> is <code>Member</code> and the account is enabled; otherwise sign-in is refused with "FileShare is for company employees only". This check is needed because guests invited into our Microsoft tenant can also sign in, and the token checks alone do not stop them. Name and email always come from Microsoft Graph, never from the email inside the sign-in token (Microsoft says that value can change and must not be used to decide access).</p>
+
+<h2>3. Sign-in (single sign-on)</h2>
+<ol class="steps">
+<li>The user opens any FileShare page (for example an approval link <code>/approve/...</code>). Without a session, the server makes three random values: <b>state</b>, <b>nonce</b> and the PKCE <b>code_verifier</b>. It keeps them, together with the page the user wanted (only a relative path on our own site), in a 10-minute cookie <code>__Host-fs_auth</code> (HttpOnly, Secure, SameSite=Lax). It then redirects the browser to Microsoft's sign-in page <code>https://login.microsoftonline.com/&lt;tenant-id&gt;/oauth2/v2.0/authorize</code> (OpenID Connect authorization code flow with PKCE, scopes <code>openid profile email User.Read</code>, <code>response_mode=query</code> so Microsoft comes back with a normal GET). The server reads Microsoft's addresses and signing keys from <code>https://login.microsoftonline.com/&lt;tenant-id&gt;/v2.0/.well-known/openid-configuration</code>.</li>
+<li>Microsoft signs the user in, including MFA and company rules. Usually there is no prompt because they are already signed in to Microsoft 365.</li>
+<li>Microsoft sends the browser back to <code>/auth/callback?code=...&amp;state=...</code>. The server checks that <code>state</code> matches the cookie, exchanges the code (with the code_verifier and the client secret) for an ID token, and checks the token: signed by Microsoft, <code>iss</code> = <code>https://login.microsoftonline.com/&lt;tenant-id&gt;/v2.0</code>, <code>aud</code> = our Client ID, <code>tid</code> = our tenant, <code>nonce</code> = the nonce in the cookie, not expired. <code>openid-client</code> checks state, iss, aud, nonce and expiry; we turn on its signature check with <code>enableNonRepudiationChecks</code> (off by default because the token comes straight from Microsoft over HTTPS), and our own code checks <code>tid</code>. Then it deletes <code>__Host-fs_auth</code>.</li>
+<li>The server finds the user by <code>oid</code> (= <code>entra_id</code>). Inactive users are refused. Unknown users go through the safety-net check in section 2.</li>
+<li>The server creates a session: a random 256-bit id, stored only as a hash in <code>sessions</code>, sent as cookie <code>__Host-fs_session</code> (HttpOnly, Secure, SameSite=Lax, Path=/, no Domain), valid 8 hours. The <code>__Host-</code> prefix means no other company.com website (for example share.company.com) can set or replace this cookie. The user is then sent to the page they wanted, so an approver who clicked an email link lands on the approval page.</li>
+<li>Every API call reads the cookie, loads the session and the user, and checks the user is still active.</li>
+</ol>
+<p>The browser never holds Microsoft tokens; the server keeps everything (the "backend for frontend" pattern). FileShare never stores passwords. The first Admin is given in configuration by their <b>Microsoft object id</b> (<code>FIRST_ADMIN_ENTRA_ID</code>), matched to <code>users.entra_id</code>, never by email.</p>
+
+<h2>4. Database</h2>
+<h3>Why PostgreSQL</h3>
+<ul>
+<li>Free, open source, very reliable, and already known to the team (HyperAI uses it). FileShare gets its <b>own database</b>, separate from HyperAI's.</li>
+<li>Transactions: several changes succeed or fail together (for example "approve request" and "create link").</li>
+<li>Conditional updates: <code>UPDATE requests SET state='approved' WHERE id=$1 AND state='pending'</code> makes sure only the first approver wins.</li>
+<li>Arrays and good indexes, used for the folder path (<code>path_ids</code>).</li>
+<li>Views and column-level permissions, used to give the DMZ portal only the few columns it needs.</li>
+<li>Also holds the background job queue (pg-boss), so there is one less server to run.</li>
+</ul>
+<h3>How we create the database and tables</h3>
+<ol>
+<li>Once, by the DBA: three logins and the database. The <b>owner</b> login only runs migrations; the running app and the portal get only the rights they need.
+<pre>CREATE ROLE fileshare_owner  LOGIN PASSWORD '********';   -- owns the tables, used only for migrations at deploy
+CREATE ROLE fileshare_app    LOGIN PASSWORD '********';   -- the running FileShare app
+CREATE ROLE fileshare_portal LOGIN PASSWORD '********';   -- the DMZ portal
+CREATE DATABASE fileshare OWNER fileshare_owner;
+REVOKE ALL ON DATABASE fileshare FROM PUBLIC;
+GRANT CONNECT ON DATABASE fileshare TO fileshare_app, fileshare_portal;
+\c fileshare
+CREATE SCHEMA pgboss AUTHORIZATION fileshare_app;          -- job queue, managed by pg-boss</pre>
+In PostgreSQL 15 and later the <code>public</code> schema belongs to the database owner, so the owner login can create the tables (and Drizzle's own <code>drizzle</code> migrations schema) without extra grants. The app starts pg-boss with <code>createSchema: false</code> (<code>new PgBoss({ connectionString, schema: 'pgboss', createSchema: false })</code>), because the schema already exists and the app login may not create schemas; pg-boss then creates its own tables inside <code>pgboss</code>.</li>
+<li>Tables are written in TypeScript with Drizzle (<code>packages/db/schema.ts</code>), for example:
+<pre>export const items = pgTable('items', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  type:      text('type').notNull(),                  // 'file' | 'folder'
+  ownerId:   uuid('owner_id').notNull().references(() => users.id),
+  parentId:  uuid('parent_id'),                       // null = top of My files
+  pathIds:   uuid('path_ids').array().notNull(),      // all parent folder ids
+  name:      text('name').notNull(),
+  size:      bigint('size', { mode: 'number' }),
+  bucket:    text('bucket'),                          // temp-files | permanent-files (files only)
+  objectKey: text('object_key'),                      // random id in MinIO (files only)
+  retention: text('retention'),                       // 'temp' | 'hold' | 'permanent' (files only)
+  expiresAt: timestamp('expires_at', { withTimezone: true }),   // temp files only
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// shares and request_files point to items:
+//   shares.item_id        → items.id  ON DELETE CASCADE   (share disappears with the item)
+//   request_files.item_id → items.id  ON DELETE SET NULL  (history keeps name and size)</pre></li>
+<li><code>drizzle-kit generate</code> turns each change into a numbered SQL migration file. Migration files are committed to Git and reviewed like code.</li>
+<li>On every deploy, pending migrations run with the <code>fileshare_owner</code> login (<code>drizzle-kit migrate</code>) before the app starts. The app itself runs with <code>fileshare_app</code>. Nobody changes the database by hand.</li>
+<li>A migration gives each login only what it needs:
+<pre>-- running app: normal read/write, but the activity log is append only
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO fileshare_app;
+REVOKE UPDATE, DELETE ON activity_log FROM fileshare_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE fileshare_owner IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO fileshare_app;   -- tables added by later migrations
+
+-- portal: one read-only view with only approved link data (a view is a saved query)
+CREATE VIEW portal_links AS
+  SELECT l.id, l.token_hash, l.recipient_email, l.failed_codes, l.locked_until, l.disabled,
+         r.package_key, r.package_name, r.access_until, u.name AS sender_name
+  FROM links l
+  JOIN requests r ON r.id = l.request_id
+  JOIN users u    ON u.id = r.sender_id
+  WHERE r.state = 'approved' AND r.send_as = 'link';
+GRANT SELECT ON portal_links TO fileshare_portal;
+GRANT SELECT (id, failed_codes, locked_until, disabled),
+      UPDATE (failed_codes, locked_until, disabled) ON links TO fileshare_portal;
+GRANT SELECT, INSERT, UPDATE ON codes TO fileshare_portal;
+GRANT INSERT ON activity_log TO fileshare_portal;</pre>
+This migration runs after the first tables (including <code>activity_log</code>) are created. The GRANT covers existing tables; the ALTER DEFAULT PRIVILEGES line gives the app the same rights on tables that later migrations add (a table that needs fewer rights gets its own REVOKE in the migration that creates it). The portal never reads the <code>users</code>, <code>items</code>, <code>shares</code> or <code>requests</code> tables directly. All ids are uuid values with a random default, so no sequence rights are needed.</li>
+</ol>
+<h3>Tables: why we need each one and what it holds</h3>
+<div class="tw"><table>
+<tr><th>Table</th><th>Why we need it</th><th>Main columns</th></tr>
+<tr><td><code>users</code></td><td>Everyone who can use FileShare (synced from Microsoft) and their role</td><td>id, entra_id, email, name, department, role (user / approver / admin), active, last_seen_at, last_login_at</td></tr>
+<tr><td><code>sessions</code></td><td>Who is signed in right now</td><td>id_hash, user_id, expires_at, created_at</td></tr>
+<tr><td><code>sync_state</code></td><td>Remembers where the Microsoft user sync stopped</td><td>key, delta_link, last_run_at</td></tr>
+<tr><td><code>items</code></td><td>Every file and folder, who owns it and where its bytes are</td><td>id, type, owner_id, parent_id, path_ids, name, size, mime_type, bucket, object_key, retention, expires_at, created_at</td></tr>
+<tr><td><code>shares</code></td><td>Which colleague a file or folder was shared with</td><td>id, item_id, user_id, shared_by, created_at</td></tr>
+<tr><td><code>requests</code></td><td>Every "send to external person" and "save permanently" request</td><td>id, kind (send / permanent), sender_id, recipient_email, send_as (link / attachment), reason, state, package_key, package_name, package_size, access_until, decided_by, decided_at, decision_reason, created_at</td></tr>
+<tr><td><code>request_files</code></td><td>The exact files frozen into a request</td><td>request_id, item_id, path_in_zip, size</td></tr>
+<tr><td><code>approval_tokens</code></td><td>One secret approval link per approver per request</td><td>id, request_id, approver_id, token_hash, expires_at, used_at</td></tr>
+<tr><td><code>links</code></td><td>The outside person's download link (Link method only)</td><td>id, request_id, token_hash, recipient_email, failed_codes, locked_until, disabled, download_notified_at</td></tr>
+<tr><td><code>codes</code></td><td>6-digit codes sent to outside people, and the short download permission after a correct code</td><td>id, link_id, code_hash, expires_at, attempts, used_at, download_hash, download_until</td></tr>
+<tr><td><code>activity_log</code></td><td>Who did what and when. Append only: no running program may change or delete rows</td><td>id, at, actor, action, item_id, request_id, ip, detail</td></tr>
+<tr><td><code>pgboss.*</code></td><td>Created automatically by pg-boss for background jobs</td><td>—</td></tr>
+</table></div>
+<p><b>Indexes:</b> unique <code>users(entra_id)</code>, <code>users(email)</code>, unique <code>items(owner_id, parent_id, lower(name)) NULLS NOT DISTINCT</code> (no two items with the same name in the same folder, including the top of My files; this is what makes "name (1)" work; written as a custom SQL migration with <code>drizzle-kit generate --custom</code>, because Drizzle cannot add NULLS NOT DISTINCT to an index), GIN <code>items(path_ids)</code>, <code>items(expires_at) WHERE retention = 'temp'</code>, <code>shares(user_id)</code>, <code>shares(item_id)</code>, <code>requests(state)</code>.</p>
+<p><b>Backup:</b> nightly <code>pg_dump</code> (or the DBA's standard backup), kept 30 days.</p>
+
+<h2>5. File storage (blob storage) and MinIO</h2>
+<h3>What blob storage is</h3>
+<p>"Blob" means binary large object: a file stored as an <b>object</b> with a <b>key</b> (its name) inside a <b>bucket</b> (a top-level container). The database only keeps information <i>about</i> each file (name, owner, size, bucket, key). The file bytes live in blob storage.</p>
+<h3>Why not keep files in the database?</h3>
+<ul>
+<li>Files make databases huge and slow, and backups very heavy.</li>
+<li>Blob storage streams large files efficiently.</li>
+<li>Blob storage has the features we need built in: locking files so they cannot be deleted, automatic deletion rules, and copying to a second server.</li>
+</ul>
+<h3>Why MinIO</h3>
+<ul>
+<li>Runs on our own server: files stay inside the company and there is no cloud bill.</li>
+<li>Speaks the <b>S3 API</b>, the most common storage API. Our code uses the standard AWS SDK, so moving later to AWS S3 or another S3-compatible store is a configuration change.</li>
+<li>Has what we need: Object Lock with default retention (permanent files), lifecycle rules (safety auto-delete), versioning, separate access keys per program with permission policies, and a second copy on another server (see the edition note below).</li>
+<li>Alternatives considered: Azure Blob Storage (cloud, different SDK, files leave our servers); a plain file server or NFS share (no locking, no auto-delete rules, no per-program keys).</li>
+<li><b>Edition note (checked October 2026):</b> the old free open-source MinIO (community edition, AGPL) is no longer maintained — its GitHub project was archived in April 2026 and it gets no security fixes — so we do not use it. We use <b>MinIO AIStor</b>, which has the same S3 API and the same <code>mc</code> commands, so our code does not change. Its free edition, <b>AIStor Free</b>, costs nothing but needs a free licence file from min.io, runs on one server only, is not open source, and does <b>not</b> include replication. In the Review step we choose how permanent files get their second copy: a paid AIStor edition with replication, or AIStor Free plus a nightly copy to a second server (both shown below).</li>
+</ul>
+<h3>Setup (one script, kept in Git, run once)</h3>
+<pre>mc alias set fs https://minio.internal:9000 ADMIN_KEY ADMIN_SECRET
+
+mc mb fs/temp-files
+mc mb --with-lock fs/permanent-files          # Object Lock can only be turned on at creation (it also turns on versioning)
+mc mb fs/outbound
+
+# permanent-files: every new file is locked automatically for 100 years
+mc retention set --default GOVERNANCE "36500d" fs/permanent-files
+
+# safety nets only (the app deletes earlier)
+mc ilm rule add fs/temp-files --expire-days 14
+mc ilm rule add fs/outbound   --expire-days 8
+
+# separate keys for the app and the portal
+mc admin user add fs fileshare-app    APP_SECRET
+mc admin user add fs fileshare-portal PORTAL_SECRET
+mc admin policy create fs app-policy    app-policy.json
+mc admin policy create fs portal-policy portal-policy.json
+mc admin policy attach fs app-policy    --user fileshare-app
+mc admin policy attach fs portal-policy --user fileshare-portal</pre>
+<p><b>Second copy of permanent files</b> (choose one in the Review step). On the second server, first create the same locked bucket — both buckets must be created with Object Lock, otherwise locked files are not copied:</p>
+<pre>mc alias set dr https://minio-dr.internal:9000 DR_ADMIN_KEY DR_ADMIN_SECRET
+mc mb --with-lock dr/permanent-files
+mc retention set --default GOVERNANCE "36500d" dr/permanent-files
+
+# Option A – paid AIStor edition (same version on both servers): live replication
+mc admin user add dr replicator REPLICATOR_SECRET
+mc admin policy create dr replication-policy replication-policy.json   # remote-user policy from the MinIO replication docs
+mc admin policy attach dr replication-policy --user replicator
+mc replicate add fs/permanent-files --remote-bucket "https://replicator:REPLICATOR_SECRET@minio-dr.internal:9000/permanent-files"
+
+# Option B – AIStor Free: nightly copy (scheduled job)
+mc mirror --overwrite=false fs/permanent-files dr/permanent-files</pre>
+<p><b>Portal policy</b> (read single files in <code>outbound</code>, nothing else):</p>
+<pre>{ "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Allow", "Action": ["s3:GetObject"],
+                  "Resource": ["arn:aws:s3:::outbound/*"] }] }</pre>
+<p><b>App policy</b>:</p>
+<pre>{ "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": ["s3:GetObject","s3:PutObject","s3:DeleteObject","s3:AbortMultipartUpload"],
+      "Resource": ["arn:aws:s3:::temp-files/*","arn:aws:s3:::outbound/*"] },
+    { "Effect": "Allow", "Action": ["s3:GetObject","s3:PutObject"],
+      "Resource": ["arn:aws:s3:::permanent-files/*"] },
+    { "Effect": "Allow", "Action": ["s3:ListBucket"],
+      "Resource": ["arn:aws:s3:::temp-files","arn:aws:s3:::permanent-files","arn:aws:s3:::outbound"] } ] }</pre>
+<p>The app has no delete, no lock bypass and no retention or lifecycle rights on <code>permanent-files</code>. <code>ListBucket</code> is there only so that "does this file exist?" checks answer "not found" correctly. Only the storage admin account can remove a lock, and only through a written IT procedure.</p>
+<h3>How the code uses it</h3>
+<ul>
+<li>AWS SDK v3 (<code>@aws-sdk/client-s3</code>) pointed at MinIO (<code>endpoint</code> + <code>forcePathStyle: true</code>).</li>
+<li><b>Upload:</b> <code>@aws-sdk/lib-storage</code> <code>Upload</code> streams the browser's upload straight into MinIO in parts; the file is never fully held in memory.</li>
+<li><b>Key:</b> a random id (<code>crypto.randomUUID()</code>). The real file name is only in the database, so storage reveals nothing.</li>
+<li><b>Download:</b> <code>GetObject</code> stream piped to the browser with <code>Content-Disposition: attachment</code>.</li>
+<li><b>Copy:</b> <code>CopyObject</code> inside MinIO (to <code>permanent-files</code>, or a package to <code>outbound</code>); the bytes never pass through the app.</li>
+<li><b>Delete:</b> <code>DeleteObject</code> (only in <code>temp-files</code> and <code>outbound</code>).</li>
+<li>Buckets are private. There are no public URLs. Access keys exist only on the servers.</li>
+</ul>
+
+<h2>6. How temporary and permanent files are kept</h2>
+<div class="tw"><table>
+<tr><th><code>retention</code></th><th>Bucket</th><th><code>expires_at</code></th><th>Meaning</th></tr>
+<tr><td>temp</td><td>temp-files</td><td>upload time + 7 days</td><td>Normal file, deleted after 7 days</td></tr>
+<tr><td>hold</td><td>temp-files</td><td>unchanged</td><td>Permanent save is waiting for approval; not deleted</td></tr>
+<tr><td>permanent</td><td>permanent-files</td><td>empty</td><td>Approved; never deleted; locked in MinIO</td></tr>
+<tr><td>empty (folders)</td><td>—</td><td>empty</td><td>Folders are only database rows and never expire</td></tr>
+</table></div>
+<ol class="steps">
+<li><b>Storage limit (10 GB per person):</b> before each upload the API adds up the person's files: <code>SELECT coalesce(sum(size),0) FROM items WHERE owner_id = $user AND type = 'file'</code>. If that plus the new file is over 10 GB, the upload is refused with "Storage full". Temporary and permanent files both count; a temporary file stops counting once it is deleted.</li>
+<li><b>Upload:</b> file goes to <code>temp-files</code>; row saved with <code>retention='temp'</code> and <code>expires_at = now + 7 days</code>.</li>
+<li><b>Clean-up job (every hour):</b> finds expired temporary files, deletes the object in MinIO, then the row (its shares go with it; <code>request_files</code> keeps name and size), and writes the activity log. Unlike the owner's Delete, it does not cancel pending send requests or stop links, because each send request has its own frozen package.
+<pre>SELECT id, object_key FROM items
+WHERE type = 'file' AND retention = 'temp' AND expires_at &lt; now()
+LIMIT 500;</pre></li>
+<li><b>Save permanently requested:</b> <code>retention='hold'</code>, so the clean-up job skips it while the approver decides.</li>
+<li><b>Approved:</b> the job first asks MinIO (<code>HeadObject</code>) whether the file is already in <code>permanent-files</code>; if not, it copies it there under the <b>same key</b> (it is locked automatically) → updates the row (<code>bucket='permanent-files'</code>, <code>retention='permanent'</code>, <code>expires_at = null</code>) → deletes the temp copy. This order means a crash can never lose the file, and a retry never makes a second locked copy that could never be removed.</li>
+<li><b>Rejected or no decision in 3 days:</b> back to <code>retention='temp'</code>. If its 7 days have already passed, <code>expires_at = now + 24 hours</code> and the owner is emailed; such a file cannot be sent for permanent save again (the API refuses it). So a file stays in <code>temp-files</code> at most 7 days + 3 days + 24 hours = 11 days, below the 14-day MinIO rule.</li>
+<li><b>Safety nets:</b> every download checks <code>expires_at</code> again; if the clean-up job stops working, the MinIO 14-day rule still removes old temporary files.</li>
+</ol>
+<p><b>Why a permanent file cannot be deleted:</b> the page hides Delete; the API refuses (<code>retention='permanent'</code>, or a folder that contains a permanent file); and MinIO refuses because the app's storage key has no delete permission on <code>permanent-files</code>, even if someone used that key directly. Object Lock is the last layer: the locked file version itself cannot be removed without the storage admin account. A plain delete by any other account would only add a "delete marker" that hides the file; the locked version stays and can be brought back.</p>
+
+<h2>7. How we know who owns a file and who can open it</h2>
+<ul>
+<li><code>items.owner_id</code> is the person who uploaded the file. Only owners add to their own folders, so everything in a person's tree is theirs.</li>
+<li><code>items.path_ids</code> lists all parent folders. Example: a file in <i>Projects › Q3</i> has <code>path_ids = [Projects, Q3]</code>. It is set when the item is created and never changes (there is no move).</li>
+<li><code>shares</code> has one row per item shared with a colleague. Sharing a folder covers everything whose <code>path_ids</code> contains that folder, including files added later, with no extra rows.</li>
+</ul>
+<div class="tw"><table>
+<tr><th>Who</th><th>Can</th></tr>
+<tr><td>Owner</td><td>Everything on their own items</td></tr>
+<tr><td>Colleague with a share (direct or through a parent folder)</td><td>Download only</td></tr>
+<tr><td>Approver of a request</td><td>Download that request's files to check them, only through the approval page (see below), while the request is waiting and while they still have the Approver or Admin role</td></tr>
+<tr><td>Anyone else</td><td>Nothing (the server answers "not found", so it does not even reveal the file exists)</td></tr>
+</table></div>
+<p>The check the server runs before every download from My files:</p>
+<pre>SELECT EXISTS (
+  SELECT 1 FROM items i
+  WHERE i.id = $item
+    AND (i.type = 'folder' OR i.retention &lt;&gt; 'temp' OR i.expires_at &gt; now())
+    AND (
+          i.owner_id = $user
+       OR EXISTS (SELECT 1 FROM shares s
+                  WHERE s.user_id = $user
+                    AND (s.item_id = i.id OR s.item_id = ANY(i.path_ids)))
+    )
+) AS allowed;</pre>
+<p><b>Approvers</b> do not get access to the files in My files. The approval page downloads through <code>GET /api/requests/:id/download</code>: for a send request it serves the request's frozen package; for a permanent-save request it serves the held files (a zip if there are several). The server allows it only when:</p>
+<pre>SELECT EXISTS (
+  SELECT 1 FROM requests r
+  JOIN approval_tokens t ON t.request_id = r.id
+  JOIN users u           ON u.id = t.approver_id
+  WHERE r.id = $request AND r.state = 'pending'
+    AND t.approver_id = $user AND t.expires_at &gt; now() AND t.used_at IS NULL
+    AND u.active AND u.role IN ('approver','admin')
+    AND r.sender_id &lt;&gt; $user
+) AS allowed;</pre>
+<ul>
+<li><b>Top of My files</b> = my items with no parent + items shared directly with me (shown as "Shared by …").</li>
+<li><b>Inside a shared folder</b> = that folder's children, allowed through <code>path_ids</code>.</li>
+<li>The page hides buttons a person may not use, but the <b>server checks every call</b>. The browser is never trusted.</li>
+</ul>
+
+<h2>8. Frontend (the web page)</h2>
+<ul>
+<li>React + TypeScript, built by Vite into static files that the API server serves: one container, one address, no cross-site setup.</li>
+<li>Fluent UI v9 components: data grid for the file list, menu for ⋮, dialogs, breadcrumb, progress bars.</li>
+<li>React Router pages: <code>/</code> (My files), <code>/folder/:id</code>, <code>/approve/:token</code>, <code>/admin/roles</code>.</li>
+<li>TanStack Query fetches and caches data from the API and refreshes the list after uploads or deletes.</li>
+<li>Upload: file picker (<code>&lt;input type="file" multiple&gt;</code>), folder picker (<code>webkitdirectory</code>) and drag and drop; each file is sent with its own progress bar.</li>
+<li>Download: a normal link to <code>/api/items/:id/download</code>; the browser saves the file.</li>
+<li>Shared TypeScript types (<code>packages/shared</code>) keep the page and the API in agreement.</li>
+</ul>
+<pre>apps/web/src/
+  pages/        MyFiles, Approve, Roles, SignedOut
+  components/   FileList, ItemMenu, DetailsPane, UploadPanel, Breadcrumb
+  dialogs/      NewFolder, Share, SendExternal, SavePermanent, Delete
+  api/          typed calls to the server</pre>
+
+<h2>9. Backend (API) and portal</h2>
+<ul>
+<li>Every API call follows the same order: <b>session check → input check (zod) → access check (section 7) → action → activity log</b>.</li>
+<li>Modules: <code>auth</code>, <code>user-sync</code>, <code>items</code> (folders, upload, download, delete, search), <code>shares</code>, <code>requests</code> (send outside, permanent save), <code>approvals</code>, <code>roles</code>, <code>email</code>, <code>jobs</code>.</li>
+<li><b>Background jobs (pg-boss):</b> user sync (every 30 minutes), clean-up (hourly), request timeout (hourly), build package (when Send is clicked), send email (with retries; every minute it also reads new portal events from the activity log, such as first download or a disabled link, and emails the sender).</li>
+<li><b>Packages:</b> when the employee clicks Send, the API first checks the total size: over 100 MB is refused, and over 20 MB only Link is allowed. A job then builds the package: a single file is copied as it is; folders and several files are streamed with <code>archiver</code> into one zip. The package is saved in <code>temp-files</code> as <code>packages/&lt;request id&gt;</code> — the portal cannot read this bucket — and its download name (for example <code>contract.pdf</code> or <code>Projects.zip</code>) is saved in <code>requests.package_name</code>. The job checks the real size again before approvers are emailed; if it is over the limit for the chosen method, the request ends and the sender is told. After approval: for <b>Link</b>, the app copies the package into <code>outbound</code>, sets <code>access_until</code> = approval time + the days the approver chose, then deletes the copy in <code>temp-files</code>; for <b>Email attachment</b>, the email job attaches the package and deletes it only after the email server has accepted the email, so retries still find it. After a rejection, a timeout or a cancellation, the package is deleted at once. When <code>access_until</code> passes, the clean-up job deletes the package from <code>outbound</code>. So <code>outbound</code> only ever holds approved link packages, and the MinIO 8-day safety rule counts from the copy made at approval, so a 7-day link is never cut short. Folder downloads in My files stream a zip straight to the browser.</li>
+<li><b>Delete</b> (by the owner): first the API refuses if the item is a permanent file, or a folder that contains any permanent file (same rule as the ⋮ menu). Then, in one transaction, delete the item and, for a folder, every item whose <code>path_ids</code> contains it. Their <code>shares</code> rows go with them (cascade); <code>request_files.item_id</code> becomes empty but name and size stay for history. Pending requests that contain these files are cancelled and the sender is told. Every link whose request contains a deleted file is set to <code>disabled</code>, and its package in <code>outbound</code> is deleted. The objects in <code>temp-files</code> are deleted after the transaction. The automatic 7-day clean-up does not stop links: the outside person has an approved frozen copy until the link time ends.</li>
+<li><b>Approval decision:</b> the approve or reject POST checks that the token belongs to the signed-in user, that the user still has the Approver or Admin role, that the user is <b>not the request's sender</b>, and that the request is still pending (conditional update). Other approvers' tokens then stop working.</li>
+<li><b>Email:</b> <code>nodemailer</code> through the company SMTP relay. For "Email attachment", the job attaches the package only after approval (its size was already checked when Send was clicked). A 20 MB file makes an email of about 27 MB (email encoding adds about one third), so the company relay must accept messages of at least 30 MB from files@company.com; some outside mail servers may still refuse it.</li>
+<li><b>Portal:</b> a separate small Fastify program with its own database login and storage key, plain HTML pages and four routes:
+  <code>GET /s/:token</code> shows the page and sends nothing ·
+  <code>POST /s/:token/code</code> sends a code ·
+  <code>POST /s/:token/verify</code> checks the code ·
+  <code>GET /s/:token/download</code> sends the package (the file or the zip) with its download name.
+  After a correct code, the portal creates a random download key valid for 30 minutes, stores only its hash and expiry in the <code>codes</code> row (<code>download_hash</code>, <code>download_until</code>) and gives the browser the cookie <code>__Host-fs_dl</code> (HttpOnly, Secure, SameSite=Strict). Download needs both the link token and this cookie, and checks again that the link is not disabled and <code>access_until</code> has not passed. The portal reads only the <code>portal_links</code> view; for "first download" and "link disabled" it writes an activity-log row, and the app's email job does the emailing.</li>
+</ul>
+<pre>fileshare/
+  apps/web          React page
+  apps/api          Fastify API + background jobs
+  apps/portal       Fastify portal (DMZ)
+  packages/db       Drizzle schema and migrations
+  packages/shared   types, hashing, email templates
+  deploy/           docker compose, Nginx config, MinIO setup script</pre>
+
+<h2>10. Security details</h2>
+<div class="tw"><table>
+<tr><th>What</th><th>How</th></tr>
+<tr><td>Tokens (sessions, approval links, outside links, download keys)</td><td>32 random bytes (<code>crypto.randomBytes</code>), sent in a cookie or URL; only a SHA-256 hash is stored</td></tr>
+<tr><td>6-digit codes</td><td>Stored as HMAC-SHA256 with a server secret (6 digits are easy to guess offline; the secret prevents that); valid 5 minutes; one use</td></tr>
+<tr><td>Counting wrong codes</td><td>Each try is counted <b>before</b> the code is compared, in one statement: <code>UPDATE codes SET attempts = attempts + 1 WHERE id = $1 AND used_at IS NULL AND expires_at &gt; now() AND attempts &lt; 5 RETURNING code_hash</code>. The code is compared only if a row comes back, so many tries sent at once cannot get past the limit. A wrong code runs <code>UPDATE links SET failed_codes = failed_codes + 1 ... RETURNING failed_codes</code> to decide on lock (5) or disable (10). A right code is marked used with <code>... SET used_at = now() WHERE id = $1 AND used_at IS NULL</code> and counts only if one row changed.</td></tr>
+<tr><td>Comparisons</td><td><code>crypto.timingSafeEqual</code> to avoid timing tricks</td></tr>
+<tr><td>Cookies</td><td>All cookies use the <code>__Host-</code> prefix (Secure, Path=/, no Domain), so no other company.com website — including the internet-facing portal — can set or replace them</td></tr>
+<tr><td>Forms (POST)</td><td>A CSRF token tied to the session (<code>@fastify/csrf-protection</code>, cookie <code>__Host-fs_csrf</code>). SameSite alone is not enough, because browsers treat share.company.com and files.company.com as the same site</td></tr>
+<tr><td>Approvals</td><td>Opening the page (GET) never decides. Decision is a POST by the signed-in approver, who must still have the role and must not be the sender</td></tr>
+<tr><td>Headers</td><td><code>@fastify/helmet</code>: Content-Security-Policy, HSTS, nosniff, no framing</td></tr>
+<tr><td>Repeated attempts</td><td><code>@fastify/rate-limit</code> on sign-in, send code and verify code</td></tr>
+<tr><td>Real client address</td><td>Nginx (and the WAF in front of the portal) pass the client address in <code>X-Forwarded-For</code>. Fastify trusts it only from our own proxy (<code>trustProxy</code> set to the addresses of our own proxies, not <code>true</code>; on the portal, if the WAF is a separate server, both the WAF and Nginx are listed in <code>TRUSTED_PROXY</code>), so rate limits and the activity log use the real client IP and a client cannot fake it</td></tr>
+<tr><td>Downloads</td><td><code>Content-Disposition: attachment</code>, <code>Content-Type: application/octet-stream</code>, <code>X-Content-Type-Options: nosniff</code> — never shown in the browser</td></tr>
+<tr><td>Activity log</td><td>Append only: no running program has update or delete rights on it</td></tr>
+<tr><td>Secrets</td><td>Environment variables / secret store, never in Git</td></tr>
+<tr><td>Network</td><td>As in the Design tab: portal in the DMZ, reaching only its database login, the <code>outbound</code> bucket and email</td></tr>
+</table></div>
+
+<h2>11. Environments and deployment</h2>
+<div class="tw"><table>
+<tr><th>Where</th><th>What runs</th></tr>
+<tr><td>Laptop</td><td>docker compose: PostgreSQL, MinIO AIStor (free licence), Mailpit, app (API + page), portal</td></tr>
+<tr><td>Staging</td><td>Same as production, with a test Entra ID app registration</td></tr>
+<tr><td>Production – internal server</td><td>app container, PostgreSQL, MinIO AIStor (or existing ones), Nginx with TLS for files.company.com</td></tr>
+<tr><td>Production – DMZ server</td><td>portal container behind Nginx + WAF for share.company.com</td></tr>
+</table></div>
+<ol>
+<li>CI on every change: lint, type check, tests, build two images (<code>app</code>, <code>portal</code>).</li>
+<li>Deploy: run database migrations with the owner login, then pull the new images and restart.</li>
+<li>Smoke test: sign in, upload, download, one approval in staging.</li>
+</ol>
+<p><b>Main settings (environment variables):</b> <code>ENTRA_TENANT_ID</code>, <code>ENTRA_CLIENT_ID</code>, <code>ENTRA_CLIENT_SECRET</code>, <code>FIRST_ADMIN_ENTRA_ID</code>, <code>DATABASE_URL</code> (app login), <code>MIGRATION_DATABASE_URL</code> (owner login, deploy only), <code>S3_ENDPOINT</code>, <code>S3_ACCESS_KEY</code>, <code>S3_SECRET_KEY</code>, <code>SMTP_URL</code>, <code>MAIL_FROM</code>, <code>APP_URL</code>, <code>PORTAL_URL</code>, <code>CODE_HMAC_SECRET</code>, <code>TRUSTED_PROXY</code>, <code>TEMP_DAYS=7</code>, <code>MAX_FILE_MB=100</code>, <code>MAX_LINK_MB=100</code>, <code>MAX_ATTACHMENT_MB=20</code>, <code>USER_QUOTA_GB=10</code>.</p>
+</div></section>
+
+<!-- ===================== TIMELINE ===================== -->
+<section class="page" id="tk"><iframe class="tkframe" id="tkframe" title="Task breakup"></iframe></section><!--tk-end-->
+<section class="page" id="tl">
+
+<div class="tw"><table class="tl">
+<tr><th>Project</th><th>Step</th><th>Days</th><th>Start date</th><th>End date</th><th style="min-width:220px">Plan</th></tr>
+<tr><td>File share system</td><td>Review</td><td class="n">2 days</td><td class="d">Mon 12 Oct 2026</td><td class="d">Tue 13 Oct 2026</td><td><div class="gbar" style="width:3.3%;margin-left:0.0%;max-width:100.0%"></div></td></tr>
+<tr><td>File share system</td><td>Development, part 1: internal file sharing</td><td class="n">26.5 days</td><td class="d">Wed 14 Oct 2026</td><td class="d">Thu 19 Nov 2026</td><td><div class="gbar" style="width:43.4%;margin-left:3.3%;max-width:96.7%"></div></td></tr>
+<tr><td>File share system</td><td>Development, part 2: approvals, outside delivery, servers, automatic tests</td><td class="n">22.5 days</td><td class="d">Thu 19 Nov 2026</td><td class="d">Mon 21 Dec 2026</td><td><div class="gbar" style="width:36.9%;margin-left:45.9%;max-width:54.1%"></div></td></tr>
+<tr><td>File share system</td><td>Code review</td><td class="n">2 days</td><td class="d">Tue 22 Dec 2026</td><td class="d">Wed 23 Dec 2026</td><td><div class="gbar" style="width:3.3%;margin-left:83.6%;max-width:16.4%"></div></td></tr>
+<tr><td>File share system</td><td>Testing</td><td class="n">3 days</td><td class="d">Thu 24 Dec 2026</td><td class="d">Mon 28 Dec 2026</td><td><div class="gbar" style="width:4.9%;margin-left:86.9%;max-width:13.1%"></div></td></tr>
+<tr><td>File share system</td><td>Testing fixes</td><td class="n">2 days</td><td class="d">Tue 29 Dec 2026</td><td class="d">Wed 30 Dec 2026</td><td><div class="gbar" style="width:3.3%;margin-left:91.8%;max-width:8.2%"></div></td></tr>
+<tr><td>File share system</td><td>Deployment</td><td class="n">3 days</td><td class="d">Thu 31 Dec 2026</td><td class="d">Mon 04 Jan 2027</td><td><div class="gbar" style="width:4.9%;margin-left:95.1%;max-width:4.9%"></div></td></tr>
+<tr class="tot"><td>File share system</td><td>Total</td><td class="n">61 days</td><td class="d">Mon 12 Oct 2026</td><td class="d">Mon 04 Jan 2027</td><td></td></tr>
+</table></div>
+<h3 style="margin-top:20px">What each step includes</h3>
+<div class="tw"><table class="tl">
+<tr><th>Step</th><th>Includes</th></tr>
+<tr><td>Review</td><td>Review this wireframe and design, confirm roles and approvers, request the Entra ID app registration (sign-in and read users), outbound HTTPS to Microsoft, servers, domains, certificates and email sender (SMTP relay up to 30 MB), and choose the MinIO AIStor edition and second-copy server.</td></tr>
+<tr><td>Development</td><td>Storage and database, Microsoft sign-in and user sync, My files (folders, upload, download, delete, search), sharing, Roles page, approval by email, save permanently, send outside as link or attachment, DMZ and portal, hourly clean-up job, activity log.</td></tr>
+<tr><td>Code review</td><td>Review all code, especially sign-in, access checks, approval page and portal.</td></tr>
+<tr><td>Testing</td><td>Functional tests of every feature in Edge, Chrome and Firefox, security tests (approval links, portal isolation, codes).</td></tr>
+<tr><td>Testing fixes</td><td>Fix issues found in testing and re-test.</td></tr>
+<tr><td>Deployment</td><td>Production deploy (internal app and DMZ portal), first user sync, short pilot with one team, go live.</td></tr>
+</table></div>
+<p class="mute">Dates depend on Review-step requests (Entra ID app registration, DMZ, certificates, email) arriving on time.</p>
+</section>
+
+</main>
+<script type="text/plain" id="tkdoc"><!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FileShare Development Tasks</title>
+<style>
+:root{--bg:#f3f2f1;--card:#fff;--ink:#201f1e;--mute:#605e5c;--line:#e1dfdd;--accent:#0f6cbd;--warn:#986f0b;--warnbg:#fff4ce;--code:#eef0f4;--ms:#e5f1fb}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1a19;--card:#252423;--ink:#f3f2f1;--mute:#c8c6c4;--line:#3b3a39;--accent:#4fa0e8;--warn:#e0a84a;--warnbg:#3d3220;--code:#2d2c2b;--ms:#1d3550}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:14px 16px}
+header h1{margin:0 0 2px;font-size:20px}
+main{max-width:1400px;margin:0 auto;padding:16px}
+.sub,.mute{color:var(--mute);font-size:13px}
+.note{color:var(--mute);margin:0 0 10px}
+.tw{overflow-x:auto}
+table.tl{width:100%;border-collapse:collapse;background:var(--card)}
+.tl th,.tl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tl th{background:var(--code)}
+.tl td.n{text-align:right;white-space:nowrap}
+.tl td.d{white-space:nowrap}
+.tl td.tech{font-size:12.5px;color:var(--mute);min-width:300px}
+.tl td.tech b{color:var(--ink)}
+.tl td:nth-child(2){min-width:380px}
+.tl td:nth-child(3){min-width:230px}
+.tl tr.ms td{background:var(--ms);min-width:0}
+.hide-tech .tech{display:none}
+.warnbox{border-left:3px solid var(--warn);background:var(--warnbg);padding:8px 10px;border-radius:0 4px 4px 0;font-size:13px;margin:8px 0}
+.btn{display:inline-block;padding:6px 14px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink);cursor:pointer}
+select{font:inherit;padding:4px 6px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:4px}
+h3{font-size:16px;margin:20px 0 8px}
+ul.words{columns:2;margin:6px 0 12px;padding-left:18px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header><h1>FileShare – Development tasks</h1><div class="sub">What the developer has to do, in simple words. The technical details are in the last column · Design and overall timeline: <a href="fileshare_system.html">fileshare_system.html</a></div></header>
+<main>
+<p class="note">The <b>Development</b> step is split into small tasks, listed in the order one developer does them. Each row says <b>what to do</b>, <b>what it means</b> and <b>when it is finished</b>. The last column explains <b>how we build it</b> in technical words. Each task includes its own tests.</p>
+<div class="tw"><table class="tl" style="max-width:none;margin-bottom:12px">
+<tr><th>Tasks</th><th>Total effort</th><th>Part 1 is ready</th><th>Development finishes</th></tr>
+<tr><td>47</td><td><b>49 working days</b></td><td><b>Thu 19 Nov 2026</b><div class="sub">internal file sharing, 26.5 days</div></td><td><b>Mon 21 Dec 2026</b></td></tr>
+</table></div>
+<h3>Words used on this page</h3>
+<ul class="words"><li><b>Server (backend)</b>: the programs that do the work behind the screens</li><li><b>Web page (frontend)</b>: what people see and click in the browser</li><li><b>Pretend data</b>: sample data used to build a screen before the real server is ready</li><li><b>Test system (staging)</b>: a full copy of FileShare used only for testing</li><li><b>Outside portal</b>: the small separate website where an outside person downloads files</li><li><b>Approver</b>: a company person who may approve sending files outside or keeping them permanently</li><li><b>DMZ</b>: a separate part of the network facing the internet, kept away from our internal systems</li><li><b>Fake mailbox (Mailpit)</b>: a test mailbox so emails can be tested without sending real ones</li></ul>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0">
+<label class="sub">Show: <select id="dtfilter">
+<option value="">All tasks</option>
+<option value="P1">Part 1 – internal file sharing</option><option value="P2">Part 2 – approvals, outside delivery, servers, tests</option>
+</select></label>
+<span class="btn" id="dttech">Hide technical details</span>
+<span class="btn" id="dtcsv">Download as CSV (for Excel or Jira)</span>
+</div>
+<div class="tw"><table class="tl" style="max-width:none" id="dttable">
+<tr><th>ID / area</th><th>What to do, in simple words</th><th>Finished when</th><th>Part</th><th>Days</th><th>When</th><th>Needs first</th><th class="tech">How we build it (technical)</th></tr>
+<tr data-owner="P1"><td><b>FS-01</b><div class="sub">Setup</div></td><td><b>Create the project and the automatic checks</b><div>Make one place where all the code lives, and set up a robot that checks the code and builds the two programs (the app and the outside portal) every time someone saves work.</div></td><td>Every save passes the automatic checks, and both programs are built and ready for the servers.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Wed 14 Oct<br>to Wed 14 Oct</td><td>—</td><td class="tech"><b>Repository and CI</b><div>Monorepo with apps/web, apps/api, apps/portal, packages/db, packages/shared; TypeScript, lint and format; CI that runs lint, type check and tests, builds the app and portal images, and pushes them to a registry (or a documented image transfer).</div><div class="sub"><i>Check:</i> CI passes; both images build and are available to the servers.</div></td></tr><tr data-owner="P1"><td><b>FS-02</b><div class="sub">Setup</div></td><td><b>Set up the test system on each developer&#x27;s computer</b><div>One command starts a small copy of everything we need (database, file storage, a fake mailbox), so every developer can work and test.</div></td><td>A developer types one command and the test system runs.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Wed 14 Oct<br>to Wed 14 Oct</td><td>—</td><td class="tech"><b>Local stack</b><div>docker compose with PostgreSQL 16, MinIO AIStor (free licence) and Mailpit; .env.example with every setting from Technical §11.</div><div class="sub"><i>Check:</i> &quot;docker compose up&quot; gives a working local stack for every developer.</div></td></tr><tr data-owner="P1"><td><b>FS-03</b><div class="sub">Database</div></td><td><b>Create the database and its accounts</b><div>Make the database and three accounts with different rights: one that may change the structure, one for the app, one for the outside portal.</div></td><td>Only the owner account can change the structure. The app uses its own limited account.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Thu 15 Oct<br>to Thu 15 Oct</td><td>FS-02</td><td class="tech"><b>Database logins and migration runner</b><div>SQL for the fileshare_owner, fileshare_app and fileshare_portal logins, database owned by fileshare_owner, pgboss schema; migration command that runs with the owner login (Technical §4).</div><div class="sub"><i>Check:</i> Migrations run as owner; the app connects as fileshare_app.</div></td></tr><tr data-owner="P1"><td><b>FS-04</b><div class="sub">File storage</div></td><td><b>Set up the file storage and its rules</b><div>Create three storage areas: temporary files, permanent files (locked, nobody can delete them) and files for outside people. Set the automatic deletion rules and the keys for the app and the portal.</div></td><td>The portal can only read the outside files. The app cannot delete permanent files.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Thu 15 Oct<br>to Thu 15 Oct</td><td>FS-02</td><td class="tech"><b>MinIO setup script</b><div>mc script (kept in Git): temp-files, permanent-files with Object Lock and default GOVERNANCE retention, outbound; 14-day and 8-day safety rules; app and portal users with their policies. Run on the local stack.</div><div class="sub"><i>Check:</i> The portal key can only read outbound; the app key cannot delete in permanent-files.</div></td></tr><tr data-owner="P1"><td><b>FS-05</b><div class="sub">Database</div></td><td><b>Create the main data tables</b><div>Create the places where we keep people, sign-ins, files and folders, and who each item is shared with. Two items with the same name in one folder are not allowed.</div></td><td>The tables are created automatically, and a duplicate name in the same folder is refused.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Fri 16 Oct<br>to Fri 16 Oct</td><td>FS-01 FS-03</td><td class="tech"><b>Core tables</b><div>Drizzle schema for users, sessions, sync_state, items and shares (shares cascade on item delete); custom SQL migration (drizzle-kit generate --custom) for the unique name index (NULLS NOT DISTINCT) and the other indexes.</div><div class="sub"><i>Check:</i> Tables are created by migration; two items with the same name in one folder are refused.</div></td></tr><tr data-owner="P1"><td><b>FS-06</b><div class="sub">Setup</div></td><td><b>Agree how the pages and the server talk to each other</b><div>Write down exactly what each web page asks the server and what it gets back, including the error messages. Prepare sample data so web page work can start before the server is ready.</div></td><td>Every page has its data format written down, the sample data covers the five file states, and both server developers have read it.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Mon 19 Oct<br>to Mon 19 Oct</td><td>FS-01</td><td class="tech"><b>API contract and sample data</b><div>In packages/shared: zod schemas and TypeScript types for every endpoint the pages use (item list and details with storage state, upload result, share, current user and roles, send and permanent requests, approval page data and decision, people search, error shapes for 401/403/404/413/Storage full, CSRF header), plus sample fixtures for own, shared, permanent, waiting and expired items and a small mock layer. Dev 1 and Dev 2 review it (about 30 minutes each).</div><div class="sub"><i>Check:</i> Every endpoint used by the page tasks has a schema; fixtures cover the five item states; Dev 1 and Dev 2 have reviewed it.</div></td></tr><tr data-owner="P1"><td><b>FS-07</b><div class="sub">File storage</div></td><td><b>Build the part that saves and reads files</b><div>Code that puts files into storage, takes them out, copies and deletes them. Files are stored under random hidden names.</div></td><td>Tests show that upload, download, copy, check and delete all work.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Tue 20 Oct<br>to Tue 20 Oct</td><td>FS-01 FS-04</td><td class="tech"><b>Storage module</b><div>S3 client for MinIO (forcePathStyle): streaming upload (lib-storage), download stream, CopyObject, HeadObject, DeleteObject; random object keys.</div><div class="sub"><i>Check:</i> Tests against local MinIO pass for upload, download, copy, check and delete.</div></td></tr><tr data-owner="P1"><td><b>FS-10</b><div class="sub">Servers</div></td><td><b>Set up the test (staging) server</b><div>Install a working copy of FileShare on an internal server with a secure address (files.company.com) so we can test it for real.</div></td><td>The address opens securely on the VPN, and the database and storage are running.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Wed 21 Oct<br>to Wed 21 Oct</td><td>FS-02 FS-03 FS-04</td><td class="tech"><b>Staging environment</b><div>Internal server: docker compose (app, PostgreSQL, MinIO, Mailpit for the test mailbox), Nginx with TLS for files.company.com; run the database logins SQL and the MinIO script on staging. (The Entra registration is made by the Microsoft 365 admin, see Needed from others.)</div><div class="sub"><i>Check:</i> https://files.company.com opens over TLS on the VPN with a valid certificate; PostgreSQL and MinIO are up; the logins SQL and the MinIO script have been run on staging.</div></td></tr><tr data-owner="P1"><td><b>FS-08</b><div class="sub">Sign-in</div></td><td><b>Build company sign-in (Microsoft)</b><div>Send the person to Microsoft to sign in with the company account, and accept them when they come back, but only if every check passes.</div></td><td>A real sign-in with the test company works. A wrong or old sign-in, a wrong company, or a tricked return address is refused.</td><td><b>Part 1</b></td><td class="n"><b>1.5</b></td><td class="d">Thu 22 Oct<br>to Fri 23 Oct</td><td>FS-05</td><td class="tech"><b>Microsoft sign-in (callback)</b><div>OIDC code flow with PKCE (openid-client): __Host-fs_auth temporary cookie (state, nonce, verifier, return page as a relative path), redirect to Microsoft, callback checks (state, nonce, iss, aud, tid, signature), sign-out. Uses the Entra ID test app registration.</div><div class="sub"><i>Check:</i> Against the test tenant the callback accepts a real sign-in and returns oid, tid and name; wrong state, wrong nonce, wrong tenant and expired tokens are refused; only a relative return path is accepted.</div></td></tr><tr data-owner="P1"><td><b>FS-09</b><div class="sub">Database</div></td><td><b>Create the tables for approvals, links and the activity log</b><div>Create the places that hold send requests, approval links, outside download links, email codes and a record of everything that happens. Decide exactly what the outside portal may read.</div></td><td>The outside portal&#x27;s account is refused everywhere except its few allowed tables.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Fri 23 Oct<br>to Mon 26 Oct</td><td>FS-05</td><td class="tech"><b>Request tables and rights</b><div>Drizzle schema for requests, request_files (SET NULL on item delete), approval_tokens, links, codes (with created_at), activity_log; rights migration: app rights + default privileges, activity_log append only, portal_links view and column grants.</div><div class="sub"><i>Check:</i> The portal login is refused on users, items, shares, requests, request_files, approval_tokens, sessions and sync_state; it can SELECT portal_links, SELECT (id, failed_codes, locked_until, disabled) and UPDATE (failed_codes, locked_until, disabled) on links, SELECT, INSERT and UPDATE on codes, and INSERT on activity_log; the app login gets a permission error on UPDATE and DELETE of activity_log.</div></td></tr><tr data-owner="P1"><td><b>FS-11</b><div class="sub">Web pages</div></td><td><b>Build the empty frame of the web app</b><div>Create the skeleton of the web app: the pages, the sign-in redirect, error handling and an &quot;employees only&quot; page. All other pages plug into it.</div></td><td>The skeleton opens every page with a pretend signed-in person.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Mon 26 Oct<br>to Tue 27 Oct</td><td>FS-01 FS-06</td><td class="tech"><b>App shell</b><div>Vite + React + TypeScript + Fluent UI; routes /, /folder/:id, /approve/:token, /admin/roles; TanStack Query; generic API client (CSRF header on every non-GET call, error shape, sign-in redirect on 401); signed-out page that says &quot;FileShare is for company employees only&quot; when sign-in is refused. Endpoint shapes come from the API contract task. Built with sample data.</div><div class="sub"><i>Check:</i> The shell renders all routes locally with a stubbed signed-in user; the signed-out page and the sign-in redirect render.</div></td></tr><tr data-owner="P1"><td><b>FS-12</b><div class="sub">Sign-in</div></td><td><b>Keep people signed in safely</b><div>After sign-in, remember the person for 8 hours safely. Block forged requests, add the standard security protections and slow down anyone sending too many requests.</div></td><td>Calls without sign-in are refused, forged forms are refused, too many fast requests are slowed, and fake addresses are ignored.</td><td><b>Part 1</b></td><td class="n"><b>1.5</b></td><td class="d">Tue 27 Oct<br>to Wed 28 Oct</td><td>FS-08</td><td class="tech"><b>Sessions and request guard</b><div>Hashed session ids in __Host-fs_session (8 hours), session store and cookie helper (with a test helper that inserts a session row), active-user check on every call, CSRF token tied to the session, and ONE reusable Fastify security plugin in packages/shared: helmet headers, @fastify/rate-limit, and trustProxy read from TRUSTED_PROXY (a list).</div><div class="sub"><i>Check:</i> Calls without a session get 401; a forged form is refused; security headers are present; rapid repeats from one IP get 429; an X-Forwarded-For sent by an untrusted caller is ignored.</div></td></tr><tr data-owner="P1"><td><b>FS-16</b><div class="sub">Files (server)</div></td><td><b>Build the check &quot;may this person open this file?&quot;</b><div>One rule used everywhere: the owner may, a person it was shared with may (also through a parent folder), and expired files may not. Otherwise the answer is &quot;not found&quot;.</div></td><td>Tests pass for the owner, a colleague it was shared with, a stranger and an expired file.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Thu 29 Oct<br>to Thu 29 Oct</td><td>FS-09</td><td class="tech"><b>Access check</b><div>One shared check: owner, shared directly or through a parent folder (path_ids), temporary-file expiry; answers &quot;not found&quot; when there is no access.</div><div class="sub"><i>Check:</i> Tests pass for owner, shared colleague, stranger and expired file.</div></td></tr><tr data-owner="P1"><td><b>FS-17</b><div class="sub">Files (server)</div></td><td><b>Build folders and file lists (server)</b><div>Create folders (up to 5 levels), show what is in a folder, show an item&#x27;s details (who has access, how long it stays) and the path at the top.</div></td><td>The owner and a colleague each see the right list and details.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Thu 29 Oct<br>to Fri 30 Oct</td><td>FS-16 FS-06</td><td class="tech"><b>Folders and list</b><div>Create folder (5 levels, name rules, &quot;name (1)&quot;); list a folder (top level = my items + items shared with me); item details (who has access, storage state); breadcrumb. Responses validate against the API contract.</div><div class="sub"><i>Check:</i> Owner and shared colleague each get the right list and details.</div></td></tr><tr data-owner="P1"><td><b>FS-21</b><div class="sub">Web pages</div></td><td><b>Build the &quot;My files&quot; page</b><div>The main screen: top bar, left menu, path, file list, a side panel with details, an empty-folder view and a phone layout. Uses pretend data for now.</div></td><td>It looks like wireframe screen 1, with pretend data.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Fri 30 Oct<br>to Mon 02 Nov</td><td>FS-11</td><td class="tech"><b>My files page</b><div>Top bar, left menu, breadcrumb, file list, folder navigation, details pane with storage state, empty folder, phone layout. Built with sample data.</div><div class="sub"><i>Check:</i> Matches wireframe screen 1 with sample data.</div></td></tr><tr data-owner="P1"><td><b>FS-13</b><div class="sub">Users</div></td><td><b>Set up background jobs and the activity log</b><div>A scheduler that runs jobs on time (clean-up, emails), and a helper that writes every important action to the log.</div></td><td>Jobs run on schedule and actions show up in the log.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Mon 02 Nov<br>to Mon 02 Nov</td><td>FS-09</td><td class="tech"><b>Job runner and activity log</b><div>pg-boss with createSchema: false and schedules; activity-log helper used by every module.</div><div class="sub"><i>Check:</i> Jobs run on schedule and actions are written to activity_log.</div></td></tr><tr data-owner="P1"><td><b>FS-14</b><div class="sub">Email</div></td><td><b>Build the emails</b><div>All the email messages: share, approval request, decision, download link, code and notices. If sending fails, try again.</div></td><td>Every email message works, and failed sends are tried again.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Tue 03 Nov<br>to Tue 03 Nov</td><td>FS-13</td><td class="tech"><b>Email service and templates</b><div>nodemailer through the SMTP relay; templates for share, approval, decision (approved / rejected / timed out), link, code, attachment and notices (including the 24-hour deletion notice and &quot;your request was cancelled&quot;); send-email job with retries; Mailpit locally. The code template lives in packages/shared so the portal can import it.</div><div class="sub"><i>Check:</i> Every template renders; failed sends are retried.</div></td></tr><tr data-owner="P1"><td><b>FS-18</b><div class="sub">Files (server)</div></td><td><b>Build file upload (server)</b><div>Accept files and folders within the limits (100 MB per file, 10 GB per person), keep the folder structure, set deletion for 7 days later, and rename duplicates to &quot;name (1)&quot;.</div></td><td>Too-big uploads are refused, and uploaded folders keep their structure.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Wed 04 Nov<br>to Wed 04 Nov</td><td>FS-17 FS-07</td><td class="tech"><b>Upload</b><div>Stream uploads to temp-files; 100 MB per file; 10 GB per person; folder upload with relative paths; expires_at = upload + 7 days; &quot;name (1)&quot; on clashes.</div><div class="sub"><i>Check:</i> Too-large and over-quota uploads are refused; uploaded folders keep their structure.</div></td></tr><tr data-owner="P1"><td><b>FS-22</b><div class="sub">Roles</div></td><td><b>Build &quot;who am I&quot; and the roles (server)</b><div>Tell the page who is signed in and what role they have. Let admins list people and change roles, keep at least one Admin, warn when there are fewer than 2 approvers, and log every change.</div></td><td>A forged request is refused, the last Admin cannot be removed, and every change is logged.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Thu 05 Nov<br>to Thu 05 Nov</td><td>FS-12 FS-06</td><td class="tech"><b>Current user, CSRF and Roles – API</b><div>GET /api/me (name, email, role and CSRF token); list and search users, change role, keep at least one Admin, warn under 2 Approvers, log every change.</div><div class="sub"><i>Check:</i> A POST without the CSRF header is refused and the same POST from the page works; the last Admin cannot be removed; every change is logged.</div></td></tr><tr data-owner="P1"><td><b>FS-42</b><div class="sub">Servers</div></td><td><b>Build the one-command deploy</b><div>A script that puts the new version on the test server: update the database, fetch the new programs and restart them.</div></td><td>One command deploys the latest version, and a short check (sign in, upload, download) passes.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Fri 06 Nov<br>to Fri 06 Nov</td><td>FS-01 FS-10 FS-12</td><td class="tech"><b>Deploy script</b><div>Push the app and portal images; one script or CI job that runs drizzle-kit migrate with the owner login (MIGRATION_DATABASE_URL), pulls the new images and restarts them on the internal server; staging env files and secrets (SMTP_URL pointing to Mailpit, APP_URL, PORTAL_URL, CODE_HMAC_SECRET, TRUSTED_PROXY).</div><div class="sub"><i>Check:</i> One command deploys the latest build to staging and a short check (sign in, upload, download) passes.</div></td></tr><tr data-owner="P1"><td><b>FS-15</b><div class="sub">Users</div></td><td><b>Keep the staff list up to date and finish sign-in</b><div>Every 30 minutes copy the staff list from Microsoft: add new people, remove people who left, ignore guests. At a person&#x27;s first sign-in, create their FileShare account.</div></td><td>Tests for add, change, remove, guest and disabled pass, and a real test person can sign in and gets an account.</td><td><b>Part 1</b></td><td class="n"><b>1.5</b></td><td class="d">Mon 09 Nov<br>to Tue 10 Nov</td><td>FS-08 FS-12 FS-13</td><td class="tech"><b>User sync and sign-in glue</b><div>Graph delta sync every 30 minutes (add/update users, skip guests, removed or disabled users made inactive with sessions deleted, expired deltaLink → full sync with last_seen_at clean-up, deltaLink saved last). Sign-in glue after the callback: look the user up by oid, first-sign-in Graph check (Member and enabled only), refuse inactive users, create the session, redirect to the saved page. First admin from FIRST_ADMIN_ENTRA_ID.</div><div class="sub"><i>Check:</i> Graph mocked tests pass for add, update, remove, guest, disabled and expired delta; one run against the test tenant; a test-tenant member signs in, a user and a session are created and an approval link returns to the approval page; a guest and a disabled user are refused with &quot;FileShare is for company employees only&quot;.</div></td></tr><tr data-owner="P1"><td><b>FS-19</b><div class="sub">Files (server)</div></td><td><b>Build download and search (server)</b><div>Let people download files (always as a download, never opened in the browser), download a folder as one zip, and search names among their own and shared files.</div></td><td>Files always download, and search shows only what the person is allowed to see.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Tue 10 Nov<br>to Wed 11 Nov</td><td>FS-18</td><td class="tech"><b>Download and search</b><div>File download with attachment headers; folder download as a streamed zip (up to 1 GB); name search over my items and items shared with me.</div><div class="sub"><i>Check:</i> Files always download (never open in the browser); search shows only allowed items.</div></td></tr><tr data-owner="P1"><td><b>FS-23</b><div class="sub">Web pages</div></td><td><b>Build the three-dot menu, New folder and Delete screens</b><div>The ⋮ menu on every item (different choices for your own, shared, waiting and permanent items), plus the New folder and Delete boxes. Pretend data.</div></td><td>The menu choices match the design table in every case.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Wed 11 Nov<br>to Thu 12 Nov</td><td>FS-21</td><td class="tech"><b>⋮ menu, new folder and delete</b><div>⋮ menu for own, shared, permanent and waiting items (also right-click and keyboard); New folder and Delete dialogs. Built with sample data.</div><div class="sub"><i>Check:</i> Menu items match the Design ⋮ table in every case with sample data.</div></td></tr><tr data-owner="P1"><td><b>FS-20</b><div class="sub">Files (server)</div></td><td><b>Build delete (server)</b><div>Delete a file or folder for good, with everything inside. Stop its shares and links, tell people whose requests were cancelled, and refuse if it holds a permanent file.</div></td><td>Deleting a folder removes everything inside, stops its links and informs the senders. It is refused when a permanent file is inside.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Thu 12 Nov<br>to Fri 13 Nov</td><td>FS-18 FS-09 FS-14</td><td class="tech"><b>Delete</b><div>Refuse permanent files and folders containing them; in one transaction remove the item and its children, cancel pending requests (and email their senders), disable links and delete their outbound packages; then delete the temp objects.</div><div class="sub"><i>Check:</i> Deleting a folder removes everything inside, stops its links, tells the senders of cancelled requests, and is refused if it contains a permanent file.</div></td></tr><tr data-owner="P1"><td><b>FS-24</b><div class="sub">Web pages</div></td><td><b>Build the upload, download and search screens</b><div>File and folder pickers, drag and drop, progress and error messages, download links and the search box. Pretend data.</div></td><td>Uploads show progress, limit errors are shown and search shows results.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Fri 13 Nov<br>to Mon 16 Nov</td><td>FS-21</td><td class="tech"><b>Upload, download and search</b><div>File and folder pickers, drag and drop, upload panel with progress and errors, download links, search box. Built with sample data.</div><div class="sub"><i>Check:</i> Files and folders upload with progress (simulated); limit errors are shown; search renders.</div></td></tr><tr data-owner="P1"><td><b>FS-25</b><div class="sub">Roles</div></td><td><b>Build the Roles page for admins</b><div>The admin page where approvers and admins are chosen. Pretend data.</div></td><td>It shows for an admin and is hidden for everyone else.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Mon 16 Nov<br>to Mon 16 Nov</td><td>FS-11</td><td class="tech"><b>Roles page</b><div>Admin-only page as in wireframe screen 4. Built with sample data.</div><div class="sub"><i>Check:</i> Renders for a sample Admin; hidden for a sample non-admin.</div></td></tr><tr data-owner="P1"><td><b>FS-26</b><div class="sub">Sharing</div></td><td><b>Build sharing with colleagues (server)</b><div>Share a file or folder with a company person, show &quot;Shared by&quot; in their list and send them an email.</div></td><td>The colleague sees the item at the top of their list, gets an email and can only download.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Tue 17 Nov<br>to Tue 17 Nov</td><td>FS-17 FS-14</td><td class="tech"><b>Share – API</b><div>Share with a synced company user (people search), shares rows, &quot;Shared by&quot; in lists, email to the colleague.</div><div class="sub"><i>Check:</i> The colleague sees the item at the top of My files and gets an email; they can only download.</div></td></tr><tr data-owner="P1"><td><b>FS-27</b><div class="sub">Sharing</div></td><td><b>Build the Share box</b><div>The box where you pick the colleagues to share with. Pretend data.</div></td><td>The box shows and checks what is typed.</td><td><b>Part 1</b></td><td class="n"><b>0.5</b></td><td class="d">Wed 18 Nov<br>to Wed 18 Nov</td><td>FS-23</td><td class="tech"><b>Share – dialog</b><div>Share dialog with people picker (wireframe screen 6). Built with sample data.</div><div class="sub"><i>Check:</i> The dialog renders and validates with sample data.</div></td></tr><tr data-owner="P1"><td><b>FS-28</b><div class="sub">Web pages</div></td><td><b>Connect the file pages to the real server</b><div>Replace the pretend data on all file pages with real data, handle loading and errors, and try every three-dot menu case with real files.</div></td><td>Everything works against the real server on the test system, and a non-admin cannot open the Roles page.</td><td><b>Part 1</b></td><td class="n"><b>1</b></td><td class="d">Wed 18 Nov<br>to Thu 19 Nov</td><td>FS-17 FS-19 FS-20 FS-26 FS-22 FS-15 FS-21 FS-23 FS-24 FS-27 FS-25</td><td class="tech"><b>Connect the file pages to the real API</b><div>Replace sample data with the real API for My files, the ⋮ menu and its dialogs, upload, download, search, share and the Roles page; handle errors and loading states; check every ⋮ menu case with real items.</div><div class="sub"><i>Check:</i> The done-when of the file page tasks passes against the real API on the local stack; the shell loads after sign-in; a non-admin cannot open /admin/roles; every ⋮ case of the Design table works on a real own, shared, permanent, waiting and expired item; 401, 403, 404, 413 and Storage full each show a message.</div></td></tr><tr data-owner="P1" class="ms"><td colspan="8"><b>Milestone – part 1 is finished on Thu 19 Nov 2026:</b> people can sign in with Microsoft, upload, download, search, share with colleagues and manage roles on the test server. This is the point where a first demo is possible.</td></tr><tr data-owner="P2"><td><b>FS-41</b><div class="sub">Servers</div></td><td><b>Set up the second copy of permanent files</b><div>Keep a second, locked copy of permanent files on another server (copied right away or every night).</div></td><td>A file saved to permanent storage appears, still locked, in the second copy.</td><td><b>Part 2</b></td><td class="n"><b>1</b></td><td class="d">Thu 19 Nov<br>to Fri 20 Nov</td><td>FS-04 FS-10</td><td class="tech"><b>Second copy of permanent files</b><div>Script in Git: dr alias, mc mb --with-lock dr/permanent-files, the same default GOVERNANCE 36500d retention, then Option A (replication user, policy, mc replicate add) or Option B (nightly mc mirror), as chosen in Review.</div><div class="sub"><i>Check:</i> An object written to permanent-files with mc appears, still locked, in the second copy (immediately for A, after the next run for B).</div></td></tr><tr data-owner="P2"><td><b>FS-29</b><div class="sub">Approvals</div></td><td><b>Build the approval engine</b><div>The core of approvals: freeze the list of files, pick the approvers (never the sender), send emails that expire after 3 days, accept only the first decision and handle the time-out.</div></td><td>If two approvers click together only one wins, and the sender cannot approve their own request.</td><td><b>Part 2</b></td><td class="n"><b>2.5</b></td><td class="d">Fri 20 Nov<br>to Tue 24 Nov</td><td>FS-16 FS-14 FS-22</td><td class="tech"><b>Request engine</b><div>Create a request with a frozen file list (folders expanded); choose approvers (never the sender, only active Approvers, Admin fallback); one notifyApprovers(requestId) that creates the hashed 3-day approval tokens and emails the approvers (timeout and token expiry count from this moment); the decision POST (conditional update so the first decision wins, sender refused, role re-checked); the hourly 3-day timeout. Permanent-save requests call notifyApprovers at creation; send requests are created in a &quot;packaging&quot; state and call it later. One notify helper emails the sender on approved, rejected and timed out. On every end state it calls the handler registered for the request kind, so the permanent-save and send tasks add handlers and do not edit the engine.</div><div class="sub"><i>Check:</i> Two approvers click at once and only one wins (parallel test on real PostgreSQL); a POST by the sender returns 403; the sender gets no approval email; no approval email, token or page exists while a send request is packaging; a timeout ends the request, emails the sender and calls its kind handler.</div></td></tr><tr data-owner="P2"><td><b>FS-30</b><div class="sub">Approvals</div></td><td><b>Build the approval page (server)</b><div>Give the approval page its data, let the approver download the files to check them, and pass the decision to the engine (a reason if rejected, and 1, 2 or 7 days of access for a link).</div></td><td>Opening the page changes nothing, a forwarded link does not work for anyone else, and the download works only while the request is waiting.</td><td><b>Part 2</b></td><td class="n"><b>1</b></td><td class="d">Wed 25 Nov<br>to Wed 25 Nov</td><td>FS-29</td><td class="tech"><b>Approval page – API</b><div>Page data with all checks; approver download of the request files (frozen package, or held files as one zip); validates the decision input (reason on Reject; access days 1, 2 or 7 for Link) and passes it to the engine decision. No decision logic of its own.</div><div class="sub"><i>Check:</i> Opening the page changes nothing; a forwarded link does not work for anyone else; the approver download works only while the request is pending.</div></td></tr><tr data-owner="P2"><td><b>FS-31</b><div class="sub">Approvals</div></td><td><b>Build the approval page</b><div>The screen the approver sees: details, download to check, choose the days, Approve, Reject and &quot;Already decided&quot;. Pretend data.</div></td><td>It shows every state: waiting, already decided, expired and &quot;you are the sender&quot;.</td><td><b>Part 2</b></td><td class="n"><b>0.5</b></td><td class="d">Thu 26 Nov<br>to Thu 26 Nov</td><td>FS-11</td><td class="tech"><b>Approval page</b><div>Page as in wireframe screen 3: details, download to check, access days, Approve, Reject, &quot;Already decided&quot;. Built with sample data.</div><div class="sub"><i>Check:</i> The page shows every state with sample data: pending, Already decided, expired, you are the sender, with Approve and Reject.</div></td></tr><tr data-owner="P2"><td><b>FS-32</b><div class="sub">Keep permanently</div></td><td><b>Build &quot;Save permanently&quot; (server)</b><div>When approved, copy the file to the locked permanent storage and remove the temporary copy. If rejected or nobody answers, make it temporary again (24 more hours if its 7 days already passed) and email the owner.</div></td><td>An approved file is locked and cannot be deleted, a retry never makes a second copy, and owners get the right notice emails.</td><td><b>Part 2</b></td><td class="n"><b>1.5</b></td><td class="d">Thu 26 Nov<br>to Fri 27 Nov</td><td>FS-29 FS-07</td><td class="tech"><b>Save permanently – API</b><div>Registered as the permanent handler of the engine: request with hold; on approval: check (HeadObject) → copy under the same key to permanent-files → update row → delete temp copy; on reject or timeout back to temporary (+24 hours if already past 7 days and email the owner the deletion time; no second request).</div><div class="sub"><i>Check:</i> An approved file is locked in MinIO and shows 🔒; a retry never makes a second copy; Mailpit shows the owner notice for a reject and for a timeout past 7 days, and none when the 7 days have not passed.</div></td></tr><tr data-owner="P2"><td><b>FS-34</b><div class="sub">Send outside</div></td><td><b>Build &quot;Send to external person&quot; (server)</b><div>Check the size (over 100 MB is refused, over 20 MB only as a link), build the package (a zip for several files), ask the approvers, and after approval prepare the download for 1, 2 or 7 days.</div></td><td>120 MB is refused, 25 MB cannot be an email attachment, a folder becomes a zip, and an approval creates the download.</td><td><b>Part 2</b></td><td class="n"><b>2.5</b></td><td class="d">Mon 30 Nov<br>to Wed 02 Dec</td><td>FS-29 FS-19</td><td class="tech"><b>Send to external person – API</b><div>Registered as the send handler of the engine. Size checks at Send (over 100 MB refused; over 20 MB only Link); the package job (single file as it is, or zip into temp-files/packages) and a real-size re-check; then set the request pending and call notifyApprovers with package name and size. If the package is too big for the chosen method: end the request, delete the package and email the sender. On approval: Link → copy to outbound, access_until, hashed link token, link email, delete the temp copy; Attachment → email with the package, deleted only after the email server accepts it. Clean-up on reject, timeout or cancel.</div><div class="sub"><i>Check:</i> Send: 120 MB is refused; a 25 MB request refuses Attachment; a folder becomes Projects.zip; a package that grew over the limit ends the request and tells the sender. Approve as Link (1/2/7 days): the outbound object exists, the temp copy is gone, links holds only a hash, Mailpit shows the link email and was empty before Approve. Approve as Attachment: Mailpit shows the attachment and the package is deleted only after SMTP accepts (a forced SMTP failure keeps it and retries). Reject, timeout and cancel leave no package.</div></td></tr><tr data-owner="P2"><td><b>FS-33</b><div class="sub">Keep permanently</div></td><td><b>Build the &quot;Save permanently&quot; screens</b><div>The reason box, the waiting state, the lock icon, and no Delete for permanent files. Pretend data.</div></td><td>The screens match the wireframe.</td><td><b>Part 2</b></td><td class="n"><b>0.5</b></td><td class="d">Wed 02 Dec<br>to Wed 02 Dec</td><td>FS-23</td><td class="tech"><b>Save permanently – dialog</b><div>Dialog with reason, waiting state, 🔒 icon, no Delete for permanent files. Built with sample data.</div><div class="sub"><i>Check:</i> Screens match the wireframe for waiting and permanent files with sample data.</div></td></tr><tr data-owner="P2"><td><b>FS-35</b><div class="sub">Send outside</div></td><td><b>Build the &quot;Send to external person&quot; box</b><div>The box with: email address, link or attachment, the 20 MB rule, the reason and the result message. Pretend data.</div></td><td>Above 20 MB the attachment choice is switched off.</td><td><b>Part 2</b></td><td class="n"><b>0.5</b></td><td class="d">Thu 03 Dec<br>to Thu 03 Dec</td><td>FS-23</td><td class="tech"><b>Send to external person – dialog</b><div>Email, Link or Email attachment, 20 MB rule, reason, result message (wireframe screen 2). Built with sample data.</div><div class="sub"><i>Check:</i> Over 20 MB the attachment option is disabled (sample data).</div></td></tr><tr data-owner="P2"><td><b>FS-36</b><div class="sub">Outside portal</div></td><td><b>Build the outside portal (a small separate website)</b><div>The small website outsiders use: a card with the masked email, and every problem shows only &quot;This link is not available&quot;. It has its own limited access and strict security settings.</div></td><td>It runs with only its own database account and storage key, and the security settings are in place.</td><td><b>Part 2</b></td><td class="n"><b>1</b></td><td class="d">Thu 03 Dec<br>to Fri 04 Dec</td><td>FS-01 FS-09 FS-12</td><td class="tech"><b>Portal app</b><div>Separate Fastify app and container with its own database login (portal_links view) and storage key; the card page (masked email) and &quot;This link is not available&quot; for every failure; route GET /s/:token (sends nothing); registers the shared security plugin with CSP, HSTS, nosniff and no framing, rate limits on the code routes keyed on the real client IP, and TRUSTED_PROXY listing both the WAF and Nginx.</div><div class="sub"><i>Check:</i> The portal runs with only its own login and key; headers are present; an untrusted X-Forwarded-For is ignored.</div></td></tr><tr data-owner="P2"><td><b>FS-37</b><div class="sub">Outside portal</div></td><td><b>Build the portal codes and download</b><div>The outsider asks for a 6-digit code (3 per hour at most, valid 5 minutes, one use), types it (5 wrong tries lock it) and then downloads. Just opening the page sends nothing.</div></td><td>&quot;Send code&quot; sends exactly one email, a 4th request in an hour sends none, and many wrong codes lock and disable the link.</td><td><b>Part 2</b></td><td class="n"><b>2</b></td><td class="d">Fri 04 Dec<br>to Tue 08 Dec</td><td>FS-36 FS-34 FS-14</td><td class="tech"><b>Portal codes and download</b><div>POST /s/:token/code: take a lock on the links row (SELECT … FOR UPDATE), count codes created in the last hour, create a code only if fewer than 3, and email it from the portal itself with nodemailer (SMTP_URL, MAIL_FROM, template from packages/shared; no pg-boss). POST verify: HMAC codes (5 minutes, one use), attempts counted before comparing in atomic UPDATEs (lock 15 minutes at 5, disable at 10). After a correct code set __Host-fs_dl (30 minutes, hash stored). GET download streams from outbound with attachment + nosniff + octet-stream, re-checks disabled and access_until, and writes activity rows.</div><div class="sub"><i>Check:</i> Send code puts exactly one email in Mailpit and opening the card sends none; the 4th code request in an hour sends no email and 5 simultaneous requests create at most 3; 20 wrong codes sent in parallel compare at most 5 (real PostgreSQL); a correct code works once; no cookie = download refused; after access_until = refused; fileshare_portal still has no access to the pgboss schema.</div></td></tr><tr data-owner="P2"><td><b>FS-38</b><div class="sub">Web pages</div></td><td><b>Connect the approval, permanent-save and send screens to the real server</b><div>Replace the pretend data on those screens with real data and handle errors.</div></td><td>Approve, reject, save permanently and send all work from the screens on the test system, and an approval link opened while signed out still reaches the page.</td><td><b>Part 2</b></td><td class="n"><b>1</b></td><td class="d">Tue 08 Dec<br>to Wed 09 Dec</td><td>FS-30 FS-32 FS-34 FS-31 FS-33 FS-35</td><td class="tech"><b>Connect the approval, permanent-save and send pages</b><div>Dev 1 connects the pages for the requests he built: approval page, save-permanently and send-to-external dialogs; replace sample data with the real API, handle errors and loading states; no sample-data import left in apps/web.</div><div class="sub"><i>Check:</i> An approval link opened while signed out ends on the approval page; approve, reject, save permanently and send (link and attachment) work from the pages against the real API on the local stack; errors show a message.</div></td></tr><tr data-owner="P2"><td><b>FS-43</b><div class="sub">Servers</div></td><td><b>Set up the outside server (DMZ) and its network</b><div>A separate server at the edge of the network for the portal at share.company.com, with a security filter and a firewall that lets it reach only the database, the storage and the email server.</div></td><td>The portal opens from the internet, nothing else can be reached from the portal server, and the logs show the real visitor addresses.</td><td><b>Part 2</b></td><td class="n"><b>2</b></td><td class="d">Wed 09 Dec<br>to Fri 11 Dec</td><td>FS-10 FS-36 FS-42</td><td class="tech"><b>DMZ and portal network</b><div>DMZ server, Nginx + WAF for share.company.com, TLS, firewall rules (portal → PostgreSQL, MinIO, SMTP only), X-Forwarded-For and TRUSTED_PROXY, and a way for images to reach the DMZ server (a registry allowed through the firewall, or a copy over SSH from the internal side); reuses the deploy script.</div><div class="sub"><i>Check:</i> The portal is reachable from the internet; from the portal server nothing else is reachable; portal activity_log rows show the real client IP, not the proxy address.</div></td></tr><tr data-owner="P2"><td><b>FS-39</b><div class="sub">Outside portal</div></td><td><b>Build the emails about outside downloads</b><div>Tell the sender once when the outsider first downloads, and once when a link is switched off.</div></td><td>One email per event and no repeats.</td><td><b>Part 2</b></td><td class="n"><b>0.5</b></td><td class="d">Fri 11 Dec<br>to Fri 11 Dec</td><td>FS-13 FS-14 FS-09</td><td class="tech"><b>Portal-event emails</b><div>App job every minute reads new portal events from activity_log and emails the sender once (first download, disabled link), using links.download_notified_at.</div><div class="sub"><i>Check:</i> One first-download email and one disabled-link email per link, none repeated on the next run (seeded rows).</div></td></tr><tr data-owner="P2"><td><b>FS-40</b><div class="sub">Daily clean-up</div></td><td><b>Build the hourly clean-up</b><div>Every hour remove expired temporary files, finished outside packages and old codes. Never touch files that are waiting for approval or permanent.</div></td><td>Expired files disappear, and waiting and permanent files stay.</td><td><b>Part 2</b></td><td class="n"><b>0.5</b></td><td class="d">Mon 14 Dec<br>to Mon 14 Dec</td><td>FS-20 FS-34</td><td class="tech"><b>Clean-up job</b><div>Hourly: delete expired temporary files, outbound packages after access_until and codes older than 24 hours (so the 3-per-hour count stays correct); never touch held or permanent files; does not cancel pending requests or stop links.</div><div class="sub"><i>Check:</i> Expired files disappear; held and permanent files stay; codes younger than 24 hours stay.</div></td></tr><tr data-owner="P2"><td><b>FS-44</b><div class="sub">Servers</div></td><td><b>Put the latest version on the test server</b><div>Install the latest version inside and in the DMZ, connect a test mailbox, add the test sign-in address in Microsoft and confirm sign-in.</div></td><td>The test server runs the current version, a test person can sign in, and the tests can read test emails.</td><td><b>Part 2</b></td><td class="n"><b>1</b></td><td class="d">Mon 14 Dec<br>to Tue 15 Dec</td><td>FS-37 FS-43 FS-41</td><td class="tech"><b>Deploy build to staging</b><div>Run the migrations with the owner login, deploy the app image internally and the portal image to the DMZ, point SMTP_URL at the staging Mailpit so the tests can read emails, have the Microsoft 365 admin add the staging redirect URI, and confirm sign-in.</div><div class="sub"><i>Check:</i> Staging runs the current build, a test user can sign in, and the tests can read an email from Mailpit.</div></td></tr><tr data-owner="P2"><td><b>FS-45</b><div class="sub">Testing</div></td><td><b>Automatic browser tests: sign-in, upload, share</b><div>A robot browser signs in, uploads, downloads and shares like a person, and reads the test emails.</div></td><td>The three flows pass 3 times in a row with one command.</td><td><b>Part 2</b></td><td class="n"><b>1.5</b></td><td class="d">Tue 15 Dec<br>to Wed 16 Dec</td><td>FS-28 FS-44</td><td class="tech"><b>Browser flow tests – sign-in, upload, share</b><div>Playwright harness (Microsoft sign-in with the test accounts, reading emails from the staging Mailpit) and the flows: sign-in, upload and download, share. Needs three test-tenant members (sender, approver, colleague) that can sign in without MFA.</div><div class="sub"><i>Check:</i> The three flows pass three runs in a row on staging with one command; the harness can sign in as each test user and read an email from Mailpit.</div></td></tr><tr data-owner="P2"><td><b>FS-46</b><div class="sub">Testing</div></td><td><b>Automatic browser tests: approvals and outside delivery</b><div>Robot tests for saving permanently with approval, sending as a link with a code, and sending as an attachment, starting from the email link.</div></td><td>The three flows pass 3 times in a row.</td><td><b>Part 2</b></td><td class="n"><b>1.5</b></td><td class="d">Thu 17 Dec<br>to Fri 18 Dec</td><td>FS-38 FS-37 FS-44</td><td class="tech"><b>Browser flow tests – approvals and outside delivery</b><div>Playwright flows using the same harness: permanent save approval, send as link with code and download, send as attachment. The approval flows start from the emailed link while signed out.</div><div class="sub"><i>Check:</i> The three flows pass three runs in a row on staging; the link flow reads the emailed link and code from Mailpit.</div></td></tr><tr data-owner="P2"><td><b>FS-47</b><div class="sub">Testing</div></td><td><b>Integration day: fix and hand over</b><div>Everyone fixes what the tests found and hands a clean list of open issues to the Testing step.</div></td><td>The latest version is on the test server, all six flows pass, and every open issue is on one list.</td><td><b>Part 2</b></td><td class="n"><b>1.5</b></td><td class="d">Fri 18 Dec<br>to Mon 21 Dec</td><td>FS-40 FS-45 FS-46 FS-39</td><td class="tech"><b>Integration day</b><div>Everyone fixes what the flow tests found and hands over to the Testing step.</div><div class="sub"><i>Check:</i> The latest build is deployed to staging with migrations applied; the six flows pass on it; every issue found is on one open-issues list handed to the Testing step.</div></td></tr>
+</table></div>
+@@OPENSCRIPT@@ type="application/json" id="dtcsvdata">[["ID", "Area", "Part", "What to do", "In simple words", "Finished when", "Depends on", "Days", "Start", "End", "Technical: task name", "Technical: how we build it", "Technical: check"], ["FS-01", "Setup", "Part 1", "Create the project and the automatic checks", "Make one place where all the code lives, and set up a robot that checks the code and builds the two programs (the app and the outside portal) every time someone saves work.", "Every save passes the automatic checks, and both programs are built and ready for the servers.", "", 0.5, "Wed 14 Oct", "Wed 14 Oct", "Repository and CI", "Monorepo with apps/web, apps/api, apps/portal, packages/db, packages/shared; TypeScript, lint and format; CI that runs lint, type check and tests, builds the app and portal images, and pushes them to a registry (or a documented image transfer).", "CI passes; both images build and are available to the servers."], ["FS-02", "Setup", "Part 1", "Set up the test system on each developer's computer", "One command starts a small copy of everything we need (database, file storage, a fake mailbox), so every developer can work and test.", "A developer types one command and the test system runs.", "", 0.5, "Wed 14 Oct", "Wed 14 Oct", "Local stack", "docker compose with PostgreSQL 16, MinIO AIStor (free licence) and Mailpit; .env.example with every setting from Technical \u00a711.", "\"docker compose up\" gives a working local stack for every developer."], ["FS-03", "Database", "Part 1", "Create the database and its accounts", "Make the database and three accounts with different rights: one that may change the structure, one for the app, one for the outside portal.", "Only the owner account can change the structure. The app uses its own limited account.", "FS-02", 0.5, "Thu 15 Oct", "Thu 15 Oct", "Database logins and migration runner", "SQL for the fileshare_owner, fileshare_app and fileshare_portal logins, database owned by fileshare_owner, pgboss schema; migration command that runs with the owner login (Technical \u00a74).", "Migrations run as owner; the app connects as fileshare_app."], ["FS-04", "File storage", "Part 1", "Set up the file storage and its rules", "Create three storage areas: temporary files, permanent files (locked, nobody can delete them) and files for outside people. Set the automatic deletion rules and the keys for the app and the portal.", "The portal can only read the outside files. The app cannot delete permanent files.", "FS-02", 0.5, "Thu 15 Oct", "Thu 15 Oct", "MinIO setup script", "mc script (kept in Git): temp-files, permanent-files with Object Lock and default GOVERNANCE retention, outbound; 14-day and 8-day safety rules; app and portal users with their policies. Run on the local stack.", "The portal key can only read outbound; the app key cannot delete in permanent-files."], ["FS-05", "Database", "Part 1", "Create the main data tables", "Create the places where we keep people, sign-ins, files and folders, and who each item is shared with. Two items with the same name in one folder are not allowed.", "The tables are created automatically, and a duplicate name in the same folder is refused.", "FS-01 FS-03", 1.0, "Fri 16 Oct", "Fri 16 Oct", "Core tables", "Drizzle schema for users, sessions, sync_state, items and shares (shares cascade on item delete); custom SQL migration (drizzle-kit generate --custom) for the unique name index (NULLS NOT DISTINCT) and the other indexes.", "Tables are created by migration; two items with the same name in one folder are refused."], ["FS-06", "Setup", "Part 1", "Agree how the pages and the server talk to each other", "Write down exactly what each web page asks the server and what it gets back, including the error messages. Prepare sample data so web page work can start before the server is ready.", "Every page has its data format written down, the sample data covers the five file states, and both server developers have read it.", "FS-01", 1.0, "Mon 19 Oct", "Mon 19 Oct", "API contract and sample data", "In packages/shared: zod schemas and TypeScript types for every endpoint the pages use (item list and details with storage state, upload result, share, current user and roles, send and permanent requests, approval page data and decision, people search, error shapes for 401/403/404/413/Storage full, CSRF header), plus sample fixtures for own, shared, permanent, waiting and expired items and a small mock layer. Dev 1 and Dev 2 review it (about 30 minutes each).", "Every endpoint used by the page tasks has a schema; fixtures cover the five item states; Dev 1 and Dev 2 have reviewed it."], ["FS-07", "File storage", "Part 1", "Build the part that saves and reads files", "Code that puts files into storage, takes them out, copies and deletes them. Files are stored under random hidden names.", "Tests show that upload, download, copy, check and delete all work.", "FS-01 FS-04", 1.0, "Tue 20 Oct", "Tue 20 Oct", "Storage module", "S3 client for MinIO (forcePathStyle): streaming upload (lib-storage), download stream, CopyObject, HeadObject, DeleteObject; random object keys.", "Tests against local MinIO pass for upload, download, copy, check and delete."], ["FS-10", "Servers", "Part 1", "Set up the test (staging) server", "Install a working copy of FileShare on an internal server with a secure address (files.company.com) so we can test it for real.", "The address opens securely on the VPN, and the database and storage are running.", "FS-02 FS-03 FS-04", 1.0, "Wed 21 Oct", "Wed 21 Oct", "Staging environment", "Internal server: docker compose (app, PostgreSQL, MinIO, Mailpit for the test mailbox), Nginx with TLS for files.company.com; run the database logins SQL and the MinIO script on staging. (The Entra registration is made by the Microsoft 365 admin, see Needed from others.)", "https://files.company.com opens over TLS on the VPN with a valid certificate; PostgreSQL and MinIO are up; the logins SQL and the MinIO script have been run on staging."], ["FS-08", "Sign-in", "Part 1", "Build company sign-in (Microsoft)", "Send the person to Microsoft to sign in with the company account, and accept them when they come back, but only if every check passes.", "A real sign-in with the test company works. A wrong or old sign-in, a wrong company, or a tricked return address is refused.", "FS-05", 1.5, "Thu 22 Oct", "Fri 23 Oct", "Microsoft sign-in (callback)", "OIDC code flow with PKCE (openid-client): __Host-fs_auth temporary cookie (state, nonce, verifier, return page as a relative path), redirect to Microsoft, callback checks (state, nonce, iss, aud, tid, signature), sign-out. Uses the Entra ID test app registration.", "Against the test tenant the callback accepts a real sign-in and returns oid, tid and name; wrong state, wrong nonce, wrong tenant and expired tokens are refused; only a relative return path is accepted."], ["FS-09", "Database", "Part 1", "Create the tables for approvals, links and the activity log", "Create the places that hold send requests, approval links, outside download links, email codes and a record of everything that happens. Decide exactly what the outside portal may read.", "The outside portal's account is refused everywhere except its few allowed tables.", "FS-05", 1.0, "Fri 23 Oct", "Mon 26 Oct", "Request tables and rights", "Drizzle schema for requests, request_files (SET NULL on item delete), approval_tokens, links, codes (with created_at), activity_log; rights migration: app rights + default privileges, activity_log append only, portal_links view and column grants.", "The portal login is refused on users, items, shares, requests, request_files, approval_tokens, sessions and sync_state; it can SELECT portal_links, SELECT (id, failed_codes, locked_until, disabled) and UPDATE (failed_codes, locked_until, disabled) on links, SELECT, INSERT and UPDATE on codes, and INSERT on activity_log; the app login gets a permission error on UPDATE and DELETE of activity_log."], ["FS-11", "Web pages", "Part 1", "Build the empty frame of the web app", "Create the skeleton of the web app: the pages, the sign-in redirect, error handling and an \"employees only\" page. All other pages plug into it.", "The skeleton opens every page with a pretend signed-in person.", "FS-01 FS-06", 1.0, "Mon 26 Oct", "Tue 27 Oct", "App shell", "Vite + React + TypeScript + Fluent UI; routes /, /folder/:id, /approve/:token, /admin/roles; TanStack Query; generic API client (CSRF header on every non-GET call, error shape, sign-in redirect on 401); signed-out page that says \"FileShare is for company employees only\" when sign-in is refused. Endpoint shapes come from the API contract task. Built with sample data.", "The shell renders all routes locally with a stubbed signed-in user; the signed-out page and the sign-in redirect render."], ["FS-12", "Sign-in", "Part 1", "Keep people signed in safely", "After sign-in, remember the person for 8 hours safely. Block forged requests, add the standard security protections and slow down anyone sending too many requests.", "Calls without sign-in are refused, forged forms are refused, too many fast requests are slowed, and fake addresses are ignored.", "FS-08", 1.5, "Tue 27 Oct", "Wed 28 Oct", "Sessions and request guard", "Hashed session ids in __Host-fs_session (8 hours), session store and cookie helper (with a test helper that inserts a session row), active-user check on every call, CSRF token tied to the session, and ONE reusable Fastify security plugin in packages/shared: helmet headers, @fastify/rate-limit, and trustProxy read from TRUSTED_PROXY (a list).", "Calls without a session get 401; a forged form is refused; security headers are present; rapid repeats from one IP get 429; an X-Forwarded-For sent by an untrusted caller is ignored."], ["FS-16", "Files (server)", "Part 1", "Build the check \"may this person open this file?\"", "One rule used everywhere: the owner may, a person it was shared with may (also through a parent folder), and expired files may not. Otherwise the answer is \"not found\".", "Tests pass for the owner, a colleague it was shared with, a stranger and an expired file.", "FS-09", 0.5, "Thu 29 Oct", "Thu 29 Oct", "Access check", "One shared check: owner, shared directly or through a parent folder (path_ids), temporary-file expiry; answers \"not found\" when there is no access.", "Tests pass for owner, shared colleague, stranger and expired file."], ["FS-17", "Files (server)", "Part 1", "Build folders and file lists (server)", "Create folders (up to 5 levels), show what is in a folder, show an item's details (who has access, how long it stays) and the path at the top.", "The owner and a colleague each see the right list and details.", "FS-16 FS-06", 1.0, "Thu 29 Oct", "Fri 30 Oct", "Folders and list", "Create folder (5 levels, name rules, \"name (1)\"); list a folder (top level = my items + items shared with me); item details (who has access, storage state); breadcrumb. Responses validate against the API contract.", "Owner and shared colleague each get the right list and details."], ["FS-21", "Web pages", "Part 1", "Build the \"My files\" page", "The main screen: top bar, left menu, path, file list, a side panel with details, an empty-folder view and a phone layout. Uses pretend data for now.", "It looks like wireframe screen 1, with pretend data.", "FS-11", 1.0, "Fri 30 Oct", "Mon 02 Nov", "My files page", "Top bar, left menu, breadcrumb, file list, folder navigation, details pane with storage state, empty folder, phone layout. Built with sample data.", "Matches wireframe screen 1 with sample data."], ["FS-13", "Users", "Part 1", "Set up background jobs and the activity log", "A scheduler that runs jobs on time (clean-up, emails), and a helper that writes every important action to the log.", "Jobs run on schedule and actions show up in the log.", "FS-09", 0.5, "Mon 02 Nov", "Mon 02 Nov", "Job runner and activity log", "pg-boss with createSchema: false and schedules; activity-log helper used by every module.", "Jobs run on schedule and actions are written to activity_log."], ["FS-14", "Email", "Part 1", "Build the emails", "All the email messages: share, approval request, decision, download link, code and notices. If sending fails, try again.", "Every email message works, and failed sends are tried again.", "FS-13", 1.0, "Tue 03 Nov", "Tue 03 Nov", "Email service and templates", "nodemailer through the SMTP relay; templates for share, approval, decision (approved / rejected / timed out), link, code, attachment and notices (including the 24-hour deletion notice and \"your request was cancelled\"); send-email job with retries; Mailpit locally. The code template lives in packages/shared so the portal can import it.", "Every template renders; failed sends are retried."], ["FS-18", "Files (server)", "Part 1", "Build file upload (server)", "Accept files and folders within the limits (100 MB per file, 10 GB per person), keep the folder structure, set deletion for 7 days later, and rename duplicates to \"name (1)\".", "Too-big uploads are refused, and uploaded folders keep their structure.", "FS-17 FS-07", 1.0, "Wed 04 Nov", "Wed 04 Nov", "Upload", "Stream uploads to temp-files; 100 MB per file; 10 GB per person; folder upload with relative paths; expires_at = upload + 7 days; \"name (1)\" on clashes.", "Too-large and over-quota uploads are refused; uploaded folders keep their structure."], ["FS-22", "Roles", "Part 1", "Build \"who am I\" and the roles (server)", "Tell the page who is signed in and what role they have. Let admins list people and change roles, keep at least one Admin, warn when there are fewer than 2 approvers, and log every change.", "A forged request is refused, the last Admin cannot be removed, and every change is logged.", "FS-12 FS-06", 1.0, "Thu 05 Nov", "Thu 05 Nov", "Current user, CSRF and Roles \u2013 API", "GET /api/me (name, email, role and CSRF token); list and search users, change role, keep at least one Admin, warn under 2 Approvers, log every change.", "A POST without the CSRF header is refused and the same POST from the page works; the last Admin cannot be removed; every change is logged."], ["FS-42", "Servers", "Part 1", "Build the one-command deploy", "A script that puts the new version on the test server: update the database, fetch the new programs and restart them.", "One command deploys the latest version, and a short check (sign in, upload, download) passes.", "FS-01 FS-10 FS-12", 1.0, "Fri 06 Nov", "Fri 06 Nov", "Deploy script", "Push the app and portal images; one script or CI job that runs drizzle-kit migrate with the owner login (MIGRATION_DATABASE_URL), pulls the new images and restarts them on the internal server; staging env files and secrets (SMTP_URL pointing to Mailpit, APP_URL, PORTAL_URL, CODE_HMAC_SECRET, TRUSTED_PROXY).", "One command deploys the latest build to staging and a short check (sign in, upload, download) passes."], ["FS-15", "Users", "Part 1", "Keep the staff list up to date and finish sign-in", "Every 30 minutes copy the staff list from Microsoft: add new people, remove people who left, ignore guests. At a person's first sign-in, create their FileShare account.", "Tests for add, change, remove, guest and disabled pass, and a real test person can sign in and gets an account.", "FS-08 FS-12 FS-13", 1.5, "Mon 09 Nov", "Tue 10 Nov", "User sync and sign-in glue", "Graph delta sync every 30 minutes (add/update users, skip guests, removed or disabled users made inactive with sessions deleted, expired deltaLink \u2192 full sync with last_seen_at clean-up, deltaLink saved last). Sign-in glue after the callback: look the user up by oid, first-sign-in Graph check (Member and enabled only), refuse inactive users, create the session, redirect to the saved page. First admin from FIRST_ADMIN_ENTRA_ID.", "Graph mocked tests pass for add, update, remove, guest, disabled and expired delta; one run against the test tenant; a test-tenant member signs in, a user and a session are created and an approval link returns to the approval page; a guest and a disabled user are refused with \"FileShare is for company employees only\"."], ["FS-19", "Files (server)", "Part 1", "Build download and search (server)", "Let people download files (always as a download, never opened in the browser), download a folder as one zip, and search names among their own and shared files.", "Files always download, and search shows only what the person is allowed to see.", "FS-18", 1.0, "Tue 10 Nov", "Wed 11 Nov", "Download and search", "File download with attachment headers; folder download as a streamed zip (up to 1 GB); name search over my items and items shared with me.", "Files always download (never open in the browser); search shows only allowed items."], ["FS-23", "Web pages", "Part 1", "Build the three-dot menu, New folder and Delete screens", "The \u22ee menu on every item (different choices for your own, shared, waiting and permanent items), plus the New folder and Delete boxes. Pretend data.", "The menu choices match the design table in every case.", "FS-21", 1.0, "Wed 11 Nov", "Thu 12 Nov", "\u22ee menu, new folder and delete", "\u22ee menu for own, shared, permanent and waiting items (also right-click and keyboard); New folder and Delete dialogs. Built with sample data.", "Menu items match the Design \u22ee table in every case with sample data."], ["FS-20", "Files (server)", "Part 1", "Build delete (server)", "Delete a file or folder for good, with everything inside. Stop its shares and links, tell people whose requests were cancelled, and refuse if it holds a permanent file.", "Deleting a folder removes everything inside, stops its links and informs the senders. It is refused when a permanent file is inside.", "FS-18 FS-09 FS-14", 1.0, "Thu 12 Nov", "Fri 13 Nov", "Delete", "Refuse permanent files and folders containing them; in one transaction remove the item and its children, cancel pending requests (and email their senders), disable links and delete their outbound packages; then delete the temp objects.", "Deleting a folder removes everything inside, stops its links, tells the senders of cancelled requests, and is refused if it contains a permanent file."], ["FS-24", "Web pages", "Part 1", "Build the upload, download and search screens", "File and folder pickers, drag and drop, progress and error messages, download links and the search box. Pretend data.", "Uploads show progress, limit errors are shown and search shows results.", "FS-21", 1.0, "Fri 13 Nov", "Mon 16 Nov", "Upload, download and search", "File and folder pickers, drag and drop, upload panel with progress and errors, download links, search box. Built with sample data.", "Files and folders upload with progress (simulated); limit errors are shown; search renders."], ["FS-25", "Roles", "Part 1", "Build the Roles page for admins", "The admin page where approvers and admins are chosen. Pretend data.", "It shows for an admin and is hidden for everyone else.", "FS-11", 0.5, "Mon 16 Nov", "Mon 16 Nov", "Roles page", "Admin-only page as in wireframe screen 4. Built with sample data.", "Renders for a sample Admin; hidden for a sample non-admin."], ["FS-26", "Sharing", "Part 1", "Build sharing with colleagues (server)", "Share a file or folder with a company person, show \"Shared by\" in their list and send them an email.", "The colleague sees the item at the top of their list, gets an email and can only download.", "FS-17 FS-14", 1.0, "Tue 17 Nov", "Tue 17 Nov", "Share \u2013 API", "Share with a synced company user (people search), shares rows, \"Shared by\" in lists, email to the colleague.", "The colleague sees the item at the top of My files and gets an email; they can only download."], ["FS-27", "Sharing", "Part 1", "Build the Share box", "The box where you pick the colleagues to share with. Pretend data.", "The box shows and checks what is typed.", "FS-23", 0.5, "Wed 18 Nov", "Wed 18 Nov", "Share \u2013 dialog", "Share dialog with people picker (wireframe screen 6). Built with sample data.", "The dialog renders and validates with sample data."], ["FS-28", "Web pages", "Part 1", "Connect the file pages to the real server", "Replace the pretend data on all file pages with real data, handle loading and errors, and try every three-dot menu case with real files.", "Everything works against the real server on the test system, and a non-admin cannot open the Roles page.", "FS-17 FS-19 FS-20 FS-26 FS-22 FS-15 FS-21 FS-23 FS-24 FS-27 FS-25", 1.0, "Wed 18 Nov", "Thu 19 Nov", "Connect the file pages to the real API", "Replace sample data with the real API for My files, the \u22ee menu and its dialogs, upload, download, search, share and the Roles page; handle errors and loading states; check every \u22ee menu case with real items.", "The done-when of the file page tasks passes against the real API on the local stack; the shell loads after sign-in; a non-admin cannot open /admin/roles; every \u22ee case of the Design table works on a real own, shared, permanent, waiting and expired item; 401, 403, 404, 413 and Storage full each show a message."], ["FS-41", "Servers", "Part 2", "Set up the second copy of permanent files", "Keep a second, locked copy of permanent files on another server (copied right away or every night).", "A file saved to permanent storage appears, still locked, in the second copy.", "FS-04 FS-10", 1.0, "Thu 19 Nov", "Fri 20 Nov", "Second copy of permanent files", "Script in Git: dr alias, mc mb --with-lock dr/permanent-files, the same default GOVERNANCE 36500d retention, then Option A (replication user, policy, mc replicate add) or Option B (nightly mc mirror), as chosen in Review.", "An object written to permanent-files with mc appears, still locked, in the second copy (immediately for A, after the next run for B)."], ["FS-29", "Approvals", "Part 2", "Build the approval engine", "The core of approvals: freeze the list of files, pick the approvers (never the sender), send emails that expire after 3 days, accept only the first decision and handle the time-out.", "If two approvers click together only one wins, and the sender cannot approve their own request.", "FS-16 FS-14 FS-22", 2.5, "Fri 20 Nov", "Tue 24 Nov", "Request engine", "Create a request with a frozen file list (folders expanded); choose approvers (never the sender, only active Approvers, Admin fallback); one notifyApprovers(requestId) that creates the hashed 3-day approval tokens and emails the approvers (timeout and token expiry count from this moment); the decision POST (conditional update so the first decision wins, sender refused, role re-checked); the hourly 3-day timeout. Permanent-save requests call notifyApprovers at creation; send requests are created in a \"packaging\" state and call it later. One notify helper emails the sender on approved, rejected and timed out. On every end state it calls the handler registered for the request kind, so the permanent-save and send tasks add handlers and do not edit the engine.", "Two approvers click at once and only one wins (parallel test on real PostgreSQL); a POST by the sender returns 403; the sender gets no approval email; no approval email, token or page exists while a send request is packaging; a timeout ends the request, emails the sender and calls its kind handler."], ["FS-30", "Approvals", "Part 2", "Build the approval page (server)", "Give the approval page its data, let the approver download the files to check them, and pass the decision to the engine (a reason if rejected, and 1, 2 or 7 days of access for a link).", "Opening the page changes nothing, a forwarded link does not work for anyone else, and the download works only while the request is waiting.", "FS-29", 1.0, "Wed 25 Nov", "Wed 25 Nov", "Approval page \u2013 API", "Page data with all checks; approver download of the request files (frozen package, or held files as one zip); validates the decision input (reason on Reject; access days 1, 2 or 7 for Link) and passes it to the engine decision. No decision logic of its own.", "Opening the page changes nothing; a forwarded link does not work for anyone else; the approver download works only while the request is pending."], ["FS-31", "Approvals", "Part 2", "Build the approval page", "The screen the approver sees: details, download to check, choose the days, Approve, Reject and \"Already decided\". Pretend data.", "It shows every state: waiting, already decided, expired and \"you are the sender\".", "FS-11", 0.5, "Thu 26 Nov", "Thu 26 Nov", "Approval page", "Page as in wireframe screen 3: details, download to check, access days, Approve, Reject, \"Already decided\". Built with sample data.", "The page shows every state with sample data: pending, Already decided, expired, you are the sender, with Approve and Reject."], ["FS-32", "Keep permanently", "Part 2", "Build \"Save permanently\" (server)", "When approved, copy the file to the locked permanent storage and remove the temporary copy. If rejected or nobody answers, make it temporary again (24 more hours if its 7 days already passed) and email the owner.", "An approved file is locked and cannot be deleted, a retry never makes a second copy, and owners get the right notice emails.", "FS-29 FS-07", 1.5, "Thu 26 Nov", "Fri 27 Nov", "Save permanently \u2013 API", "Registered as the permanent handler of the engine: request with hold; on approval: check (HeadObject) \u2192 copy under the same key to permanent-files \u2192 update row \u2192 delete temp copy; on reject or timeout back to temporary (+24 hours if already past 7 days and email the owner the deletion time; no second request).", "An approved file is locked in MinIO and shows \ud83d\udd12; a retry never makes a second copy; Mailpit shows the owner notice for a reject and for a timeout past 7 days, and none when the 7 days have not passed."], ["FS-34", "Send outside", "Part 2", "Build \"Send to external person\" (server)", "Check the size (over 100 MB is refused, over 20 MB only as a link), build the package (a zip for several files), ask the approvers, and after approval prepare the download for 1, 2 or 7 days.", "120 MB is refused, 25 MB cannot be an email attachment, a folder becomes a zip, and an approval creates the download.", "FS-29 FS-19", 2.5, "Mon 30 Nov", "Wed 02 Dec", "Send to external person \u2013 API", "Registered as the send handler of the engine. Size checks at Send (over 100 MB refused; over 20 MB only Link); the package job (single file as it is, or zip into temp-files/packages) and a real-size re-check; then set the request pending and call notifyApprovers with package name and size. If the package is too big for the chosen method: end the request, delete the package and email the sender. On approval: Link \u2192 copy to outbound, access_until, hashed link token, link email, delete the temp copy; Attachment \u2192 email with the package, deleted only after the email server accepts it. Clean-up on reject, timeout or cancel.", "Send: 120 MB is refused; a 25 MB request refuses Attachment; a folder becomes Projects.zip; a package that grew over the limit ends the request and tells the sender. Approve as Link (1/2/7 days): the outbound object exists, the temp copy is gone, links holds only a hash, Mailpit shows the link email and was empty before Approve. Approve as Attachment: Mailpit shows the attachment and the package is deleted only after SMTP accepts (a forced SMTP failure keeps it and retries). Reject, timeout and cancel leave no package."], ["FS-33", "Keep permanently", "Part 2", "Build the \"Save permanently\" screens", "The reason box, the waiting state, the lock icon, and no Delete for permanent files. Pretend data.", "The screens match the wireframe.", "FS-23", 0.5, "Wed 02 Dec", "Wed 02 Dec", "Save permanently \u2013 dialog", "Dialog with reason, waiting state, \ud83d\udd12 icon, no Delete for permanent files. Built with sample data.", "Screens match the wireframe for waiting and permanent files with sample data."], ["FS-35", "Send outside", "Part 2", "Build the \"Send to external person\" box", "The box with: email address, link or attachment, the 20 MB rule, the reason and the result message. Pretend data.", "Above 20 MB the attachment choice is switched off.", "FS-23", 0.5, "Thu 03 Dec", "Thu 03 Dec", "Send to external person \u2013 dialog", "Email, Link or Email attachment, 20 MB rule, reason, result message (wireframe screen 2). Built with sample data.", "Over 20 MB the attachment option is disabled (sample data)."], ["FS-36", "Outside portal", "Part 2", "Build the outside portal (a small separate website)", "The small website outsiders use: a card with the masked email, and every problem shows only \"This link is not available\". It has its own limited access and strict security settings.", "It runs with only its own database account and storage key, and the security settings are in place.", "FS-01 FS-09 FS-12", 1.0, "Thu 03 Dec", "Fri 04 Dec", "Portal app", "Separate Fastify app and container with its own database login (portal_links view) and storage key; the card page (masked email) and \"This link is not available\" for every failure; route GET /s/:token (sends nothing); registers the shared security plugin with CSP, HSTS, nosniff and no framing, rate limits on the code routes keyed on the real client IP, and TRUSTED_PROXY listing both the WAF and Nginx.", "The portal runs with only its own login and key; headers are present; an untrusted X-Forwarded-For is ignored."], ["FS-37", "Outside portal", "Part 2", "Build the portal codes and download", "The outsider asks for a 6-digit code (3 per hour at most, valid 5 minutes, one use), types it (5 wrong tries lock it) and then downloads. Just opening the page sends nothing.", "\"Send code\" sends exactly one email, a 4th request in an hour sends none, and many wrong codes lock and disable the link.", "FS-36 FS-34 FS-14", 2.0, "Fri 04 Dec", "Tue 08 Dec", "Portal codes and download", "POST /s/:token/code: take a lock on the links row (SELECT \u2026 FOR UPDATE), count codes created in the last hour, create a code only if fewer than 3, and email it from the portal itself with nodemailer (SMTP_URL, MAIL_FROM, template from packages/shared; no pg-boss). POST verify: HMAC codes (5 minutes, one use), attempts counted before comparing in atomic UPDATEs (lock 15 minutes at 5, disable at 10). After a correct code set __Host-fs_dl (30 minutes, hash stored). GET download streams from outbound with attachment + nosniff + octet-stream, re-checks disabled and access_until, and writes activity rows.", "Send code puts exactly one email in Mailpit and opening the card sends none; the 4th code request in an hour sends no email and 5 simultaneous requests create at most 3; 20 wrong codes sent in parallel compare at most 5 (real PostgreSQL); a correct code works once; no cookie = download refused; after access_until = refused; fileshare_portal still has no access to the pgboss schema."], ["FS-38", "Web pages", "Part 2", "Connect the approval, permanent-save and send screens to the real server", "Replace the pretend data on those screens with real data and handle errors.", "Approve, reject, save permanently and send all work from the screens on the test system, and an approval link opened while signed out still reaches the page.", "FS-30 FS-32 FS-34 FS-31 FS-33 FS-35", 1.0, "Tue 08 Dec", "Wed 09 Dec", "Connect the approval, permanent-save and send pages", "Dev 1 connects the pages for the requests he built: approval page, save-permanently and send-to-external dialogs; replace sample data with the real API, handle errors and loading states; no sample-data import left in apps/web.", "An approval link opened while signed out ends on the approval page; approve, reject, save permanently and send (link and attachment) work from the pages against the real API on the local stack; errors show a message."], ["FS-43", "Servers", "Part 2", "Set up the outside server (DMZ) and its network", "A separate server at the edge of the network for the portal at share.company.com, with a security filter and a firewall that lets it reach only the database, the storage and the email server.", "The portal opens from the internet, nothing else can be reached from the portal server, and the logs show the real visitor addresses.", "FS-10 FS-36 FS-42", 2.0, "Wed 09 Dec", "Fri 11 Dec", "DMZ and portal network", "DMZ server, Nginx + WAF for share.company.com, TLS, firewall rules (portal \u2192 PostgreSQL, MinIO, SMTP only), X-Forwarded-For and TRUSTED_PROXY, and a way for images to reach the DMZ server (a registry allowed through the firewall, or a copy over SSH from the internal side); reuses the deploy script.", "The portal is reachable from the internet; from the portal server nothing else is reachable; portal activity_log rows show the real client IP, not the proxy address."], ["FS-39", "Outside portal", "Part 2", "Build the emails about outside downloads", "Tell the sender once when the outsider first downloads, and once when a link is switched off.", "One email per event and no repeats.", "FS-13 FS-14 FS-09", 0.5, "Fri 11 Dec", "Fri 11 Dec", "Portal-event emails", "App job every minute reads new portal events from activity_log and emails the sender once (first download, disabled link), using links.download_notified_at.", "One first-download email and one disabled-link email per link, none repeated on the next run (seeded rows)."], ["FS-40", "Daily clean-up", "Part 2", "Build the hourly clean-up", "Every hour remove expired temporary files, finished outside packages and old codes. Never touch files that are waiting for approval or permanent.", "Expired files disappear, and waiting and permanent files stay.", "FS-20 FS-34", 0.5, "Mon 14 Dec", "Mon 14 Dec", "Clean-up job", "Hourly: delete expired temporary files, outbound packages after access_until and codes older than 24 hours (so the 3-per-hour count stays correct); never touch held or permanent files; does not cancel pending requests or stop links.", "Expired files disappear; held and permanent files stay; codes younger than 24 hours stay."], ["FS-44", "Servers", "Part 2", "Put the latest version on the test server", "Install the latest version inside and in the DMZ, connect a test mailbox, add the test sign-in address in Microsoft and confirm sign-in.", "The test server runs the current version, a test person can sign in, and the tests can read test emails.", "FS-37 FS-43 FS-41", 1.0, "Mon 14 Dec", "Tue 15 Dec", "Deploy build to staging", "Run the migrations with the owner login, deploy the app image internally and the portal image to the DMZ, point SMTP_URL at the staging Mailpit so the tests can read emails, have the Microsoft 365 admin add the staging redirect URI, and confirm sign-in.", "Staging runs the current build, a test user can sign in, and the tests can read an email from Mailpit."], ["FS-45", "Testing", "Part 2", "Automatic browser tests: sign-in, upload, share", "A robot browser signs in, uploads, downloads and shares like a person, and reads the test emails.", "The three flows pass 3 times in a row with one command.", "FS-28 FS-44", 1.5, "Tue 15 Dec", "Wed 16 Dec", "Browser flow tests \u2013 sign-in, upload, share", "Playwright harness (Microsoft sign-in with the test accounts, reading emails from the staging Mailpit) and the flows: sign-in, upload and download, share. Needs three test-tenant members (sender, approver, colleague) that can sign in without MFA.", "The three flows pass three runs in a row on staging with one command; the harness can sign in as each test user and read an email from Mailpit."], ["FS-46", "Testing", "Part 2", "Automatic browser tests: approvals and outside delivery", "Robot tests for saving permanently with approval, sending as a link with a code, and sending as an attachment, starting from the email link.", "The three flows pass 3 times in a row.", "FS-38 FS-37 FS-44", 1.5, "Thu 17 Dec", "Fri 18 Dec", "Browser flow tests \u2013 approvals and outside delivery", "Playwright flows using the same harness: permanent save approval, send as link with code and download, send as attachment. The approval flows start from the emailed link while signed out.", "The three flows pass three runs in a row on staging; the link flow reads the emailed link and code from Mailpit."], ["FS-47", "Testing", "Part 2", "Integration day: fix and hand over", "Everyone fixes what the tests found and hands a clean list of open issues to the Testing step.", "The latest version is on the test server, all six flows pass, and every open issue is on one list.", "FS-40 FS-45 FS-46 FS-39", 1.5, "Fri 18 Dec", "Mon 21 Dec", "Integration day", "Everyone fixes what the flow tests found and hands over to the Testing step.", "The latest build is deployed to staging with migrations applied; the six flows pass on it; every issue found is on one open-issues list handed to the Testing step."]]@@ENDSCRIPT@@>
+</main>
+@@OPENSCRIPT@@>
+document.getElementById('dtfilter').onchange=e=>{const v=e.target.value;document.querySelectorAll('#dttable tr[data-owner]').forEach(r=>r.style.display=(!v||r.dataset.owner===v)?'':'none')};
+document.getElementById('dttech').onclick=e=>{const t=document.body.classList.toggle('hide-tech');e.target.textContent=t?'Show technical details':'Hide technical details'};
+document.getElementById('dtcsv').onclick=()=>{const rows=JSON.parse(document.getElementById('dtcsvdata').textContent);const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='fileshare_development_tasks.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+@@ENDSCRIPT@@>
+</body>
+</html>
+</script>
+<script>
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===b.dataset.p));window.scrollTo(0,0)});
+document.querySelectorAll('#wfnav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#wfnav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===b.dataset.s))});
+const info=document.getElementById('sendinfo');
+document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{document.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===o));
+ info.className=o.dataset.o==='att'?'warnbox':'okbox';
+ info.innerHTML=o.dataset.o==='att'?'9.6 MB fits the 20 MB attachment limit. The approver will see "Email attachment". After approval, the files are attached to the email and cannot be taken back.':'9.6 MB · the person gets a link after approval and downloads with a code sent to the same email.'});
+(function(){var f=document.getElementById('tkframe'),d=document.getElementById('tkdoc');function load(){if(f.dataset.done)return;f.dataset.done=1;f.srcdoc=d.textContent.split('@@ENDSCRIPT@@').join('</'+'script').split('@@OPENSCRIPT@@').join('<'+'script').split('@@CMT@@').join('<!'+'--')}document.querySelector('#tabs button[data-p="tk"]').addEventListener('click',load)})();
+document.querySelectorAll('.side .sitem').forEach(i=>i.onclick=()=>{const v=i.dataset.v;if(v==='roles'){document.querySelector('#wfnav button[data-s="w4"]').click();return}const box=i.closest('.fbody');if(!document.getElementById('w1').contains(box)){document.querySelector('#wfnav button[data-s="w1"]').click();}document.querySelectorAll('#w1 .side .sitem').forEach(x=>x.classList.toggle('on',x.dataset.v===v));document.querySelectorAll('#w1 .mainp').forEach(m=>m.style.display=m.dataset.view===v?'':'none')});
+</script>
+</body>
+</html>
